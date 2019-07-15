@@ -1,0 +1,27 @@
+{
+	"name" : "rollbyte/wooo",
+	"minimum-stability" : "dev",
+	"preferred-install" : "dist",
+	"require-dev" : {
+		"squizlabs/php_codesniffer" : "~3.4",
+		"sebastian/phpcpd" : "@stable",
+		"phpunit/phpunit" : "~7.5"
+	},
+	"require" : {
+		"psr/container" : "~1.0"
+	},
+	"autoload" : {
+		"psr-4" : {
+			"wooo\\core\\" : "core",
+			"wooo\\stdlib\\" : "stdlib"
+		},
+		"files" : [
+			"autoload.php"
+		]
+	},
+	"autoload-dev" : {
+		"psr-4" : {
+			"wooo\\tests\\" : "tests"
+		}
+	}
+}

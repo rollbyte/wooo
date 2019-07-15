@@ -1,0 +1,15 @@
+setup:
+  composer:
+    action: "update"
+test:
+  php_cpd:
+    path: "wooo"
+    standard: "PSR4"
+    allow_failures: false
+  php_code_sniffer:
+    path: 'wooo'
+    standard: "PSR1,PSR2"
+    allow_failures: false
+  php_unit:
+    config: phpunit.xml
+    allow_failures: false

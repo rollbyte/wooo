@@ -1,0 +1,311 @@
+<?php
+
+namespace wooo\core;
+
+class Request
+{
+    private $IsHttps = false;
+  
+    /**
+     *
+     * @var boolean
+     */
+    private $IsXmlHttpRequest = false;
+  
+    private $JsonObject = null;
+  
+    private $uri;
+  
+    private $path;
+  
+    private $queryParameters = [];
+  
+    private $bodyParameters = [];
+  
+    private $fileParameters = [];
+  
+    private $pathParameters = [];
+    
+    private $locals = [];
+  
+    private $rawPostData = null;
+  
+    private $tz;
+
+    /**
+     * @var \wooo\core\Locale
+     */
+    private $locale;
+    
+    /**
+     * @var \wooo\core\Session
+     */
+    private $sess;
+  
+    private function acceptValue($value, $urldecode = false)
+    {
+        if (get_magic_quotes_gpc()) {
+            if (is_array($value)) {
+                array_walk_recursive(
+                    $value,
+                    function (&$item, $key, $urldecode) {
+                        $item = stripslashes($urldecode ? rawurldecode($item) : $item);
+                    },
+                    $urldecode
+                );
+            } else {
+                $value = stripslashes($urldecode ? rawurldecode($value) : $value);
+            }
+        }
+        if (!is_null($value)) {
+            return $value;
+        }
+        return null;
+    }
+  
+    private function acceptParams($params, $urldecode, &$member)
+    {
+        foreach ($params as $key => $value) {
+            $v = $this->acceptValue($value, $urldecode);
+            if (is_array($member)) {
+                $member[$key] = $v;
+            }
+        }
+    }
+  
+    public function __construct(App $app)
+    {
+        if (!isset($_SERVER['REQUEST_URI'])) {
+            if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
+                $this->uri = $_SERVER['HTTP_X_ORIGINAL_URL'];
+            } elseif (isset($_SERVER['HTTP_X_REWRITE_URL'])) {
+                // IIS Isapi_Rewrite
+                $this->uri = $_SERVER['HTTP_X_REWRITE_URL'];
+            } else {
+                // Use ORIG_PATH_INFO if there is no PATH_INFO
+                if (!isset($_SERVER['PATH_INFO']) && isset($_SERVER['ORIG_PATH_INFO'])) {
+                    $_SERVER['PATH_INFO'] = $_SERVER['ORIG_PATH_INFO'];
+                }
+        
+                // Some IIS + PHP configurations puts the script-name in the path-info (No need to append it twice)
+                if (isset($_SERVER['PATH_INFO'])) {
+                    if ($_SERVER['PATH_INFO'] == $_SERVER['SCRIPT_NAME']) {
+                        $this->uri = $_SERVER['PATH_INFO'];
+                    } else {
+                        $this->uri = $_SERVER['SCRIPT_NAME'] . $_SERVER['PATH_INFO'];
+                    }
+                }
+            }
+        } else {
+            $this->uri = $_SERVER['REQUEST_URI'];
+        }
+        $this->path = str_ireplace($app->appRoot(), '', parse_url($this->uri, PHP_URL_PATH));
+        if (!$this->path || $this->path[0] != '/') {
+            $this->path = '/' . $this->path;
+        }
+        $pathLength = strlen($this->path);
+        if ($pathLength > 1 && $this->path[$pathLength - 1] === '/') {
+            $this->path = substr($this->path, 0, $pathLength - 1);
+        }
+    
+        $this->IsXmlHttpRequest = strtolower($this->getHeader('X_REQUESTED_WITH')) == 'xmlhttprequest';
+        $this->IsHttps = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off');
+    
+        if (strtolower($this->getHeader('Content-Type')) == 'application/json') {
+            $this->JsonObject = json_decode($this->getRawPostData());
+        }
+    
+        if ($tzh = $app->config()->get('tzHeader')) {
+            $tz = $this->getHeader($tzh);
+            if ($tz) {
+                try {
+                    $this->tz = new \DateTimeZone($tz);
+                } catch (\Exception $e) {
+                    $tz_name = timezone_name_from_abbr($tz);
+                    if (!$tz_name) {
+                        $tz_name = timezone_name_from_abbr('', $tz, 0);
+                    }
+                    if (!$tz_name) {
+                        $tz_name = timezone_name_from_abbr('', $tz, 1);
+                    }
+                    if ($tz_name) {
+                        $this->tz = new \DateTimeZone($tz_name);
+                    }
+                }
+            }
+        }
+    
+        if ($h = $this->getHeader('accept-language')) {
+            $this->locale = new Locale(\Locale::acceptFromHttp($h));
+        } else {
+            $this->locale = new Locale(\Locale::getDefault());
+        }
+    
+        $this->acceptParams($_GET, true, $this->queryParameters);
+        $this->acceptParams($_POST, false, $this->bodyParameters);
+    
+        foreach ($_FILES as $key => $file) {
+            if (is_array($file)/* && (($file['error'] == 0) || is_array($file['error']))*/) {
+                if (is_array($file['name'])) {
+                    $files = array();
+                    foreach ($file['name'] as $i => $fname) {
+                        if ($file['error'][$i] == UPLOAD_ERR_OK) {
+                            $files[$i] = new UploadedFile(
+                                array(
+                                'name' => $fname,
+                                'tmp_name' => $file['tmp_name'][$i],
+                                'type' => $file['type'][$i],
+                                'size' => $file['size'][$i],
+                                'error' => UPLOAD_ERR_OK
+                                )
+                            );
+                        } else {
+                            $files[$i] = new UploadedFile(
+                                array(
+                                'error' => $file['error'][$i]
+                                )
+                            );
+                        }
+                    }
+                    $this->fileParameters[$key] = $files;
+                } else {
+                    $this->fileParameters[$key] = new UploadedFile($file);
+                }
+            }
+        }
+        
+        $this->sess = new Session($app->config());
+    }
+    
+    public function session(): Session
+    {
+        return $this->sess;
+    }
+  
+    public function getRawPostData(): ?string
+    {
+        if (is_null($this->rawPostData)) {
+            $this->rawPostData = file_get_contents('php://input');
+        }
+        return $this->rawPostData;
+    }
+  
+    public function getHeader($nm): ?string
+    {
+        $nm = strtoupper(str_replace('-', '_', $nm));
+        if (isset($_SERVER[$nm])) {
+            return $_SERVER[$nm];
+        } elseif (isset($_SERVER['HTTP_' . $nm])) {
+            return $_SERVER['HTTP_' . $nm];
+        }
+        return null;
+    }
+  
+    public function getCookie($nm): ?string
+    {
+        if (isset($_COOKIE[$nm])) {
+            $v = $this->acceptValue($_COOKIE[$nm]);
+            if ($v) {
+                return $v;
+            }
+        }
+        return null;
+    }
+  
+    public function checkPath($pattern): bool
+    {
+        $re = preg_replace('/\\\\:[a-z0-9_]+/i', '([a-z0-9%_]+)', preg_quote($pattern, '/'));
+        return preg_match('/^' . $re . '$/i', $this->path) ? true : false;
+    }
+  
+    public function parsePath($pattern): void
+    {
+        $re = preg_replace('/\\\\:[a-z0-9_]+/i', '([a-z0-9%_]+)', preg_quote($pattern, '/'));
+        $pvals = [];
+        $matched = preg_match('/^' . $re . '$/i', $this->path, $pvals);
+        if ($matched) {
+            $pnames = [];
+            preg_match_all('/:([a-z0-9_]+)/i', $pattern, $pnames, PREG_SET_ORDER);
+            $this->pathParameters = [];
+            for ($i = 0; $i < count($pnames); $i++) {
+                $pn = $pnames[$i][1];
+                $this->pathParameters[$pn] = rawurldecode($pvals[$i + 1]);
+            }
+        }
+    }
+  
+    public function getLocale(): Locale
+    {
+        return $this->locale;
+    }
+  
+    public function getTimeZone(): ?\DateTimeZone
+    {
+        return $this->tz;
+    }
+  
+    public function isAjax(): bool
+    {
+        return $this->IsXmlHttpRequest;
+    }
+  
+    public function isSecured(): bool
+    {
+        return $this->IsHttps;
+    }
+  
+    public function getHost(): ?string
+    {
+        return $_SERVER['HTTP_HOST'];
+    }
+  
+    public function getMethod(): ?string
+    {
+        return $_SERVER['REQUEST_METHOD'];
+    }
+  
+    public function getUri(): ?string
+    {
+        return $this->uri;
+    }
+  
+    public function getPath(): ?string
+    {
+        return $this->path;
+    }
+  
+    public function getParameters(): array
+    {
+        return $this->pathParameters;
+    }
+  
+    public function getQuery(): array
+    {
+        return $this->queryParameters;
+    }
+  
+    public function getBody(): array
+    {
+        return $this->bodyParameters;
+    }
+  
+    public function getJson(): ?object
+    {
+        return $this->JsonObject;
+    }
+  
+    public function getFiles(): array
+    {
+        return $this->fileParameters;
+    }
+    
+    public function __set($nm, $v)
+    {
+        $this->locals[$nm] = $v;
+    }
+    
+    public function __get($nm)
+    {
+        return $this->locals[$nm];
+    }
+}

@@ -2,3 +2,7 @@
 /.hgignore
 /.project
 /.settings
+/composer.phar
+/vendor/
+/composer.lock
+/.externalToolBuilders/
