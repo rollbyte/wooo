@@ -2,8 +2,8 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\dbal\PDODriver;
-use wooo\stdlib\dbal\SQLSequenceProvider;
+use wooo\lib\dbal\PDODriver;
+use wooo\lib\dbal\SQLSequenceProvider;
 
 class SQLSequenceProviderTest extends TestCase
 {

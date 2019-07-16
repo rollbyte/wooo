@@ -2,10 +2,10 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\dbal\PDODriver;
-use wooo\stdlib\auth\LocalPassport;
+use wooo\lib\dbal\PDODriver;
+use wooo\lib\auth\LocalPassport;
 use wooo\core\PasswordHash;
-use wooo\stdlib\auth\User;
+use wooo\lib\auth\User;
 
 class LocalPassportTest extends TestCase
 {

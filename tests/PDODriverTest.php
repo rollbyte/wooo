@@ -2,8 +2,8 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\dbal\PDODriver;
-use wooo\stdlib\dbal\interfaces\DbDriver;
+use wooo\lib\dbal\PDODriver;
+use wooo\lib\dbal\interfaces\DbDriver;
 
 class PDODriverTest extends TestCase
 {

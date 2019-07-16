@@ -2,7 +2,7 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\auth\User;
+use wooo\lib\auth\User;
 
 class UserTest extends TestCase
 {   

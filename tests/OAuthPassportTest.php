@@ -2,11 +2,11 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\dbal\PDODriver;
-use wooo\stdlib\auth\User;
+use wooo\lib\dbal\PDODriver;
+use wooo\lib\auth\User;
 use wooo\core\Session;
 use wooo\core\Request;
-use wooo\stdlib\auth\OAuth2Passport;
+use wooo\lib\auth\OAuth2Passport;
 
 class OAuthPassportTest extends TestCase
 {

@@ -4,9 +4,9 @@ namespace wooo\tests;
 use PHPUnit\Framework\TestCase;
 use wooo\core\Request;
 use wooo\core\Session;
-use wooo\stdlib\auth\SessionAuthenticator;
-use wooo\stdlib\auth\interfaces\IPassport;
-use wooo\stdlib\auth\interfaces\IUser;
+use wooo\lib\auth\SessionAuthenticator;
+use wooo\lib\auth\interfaces\IPassport;
+use wooo\lib\auth\interfaces\IUser;
 use wooo\tests\util\VirtualPassport;
 
 class SessionAuthenticatorTest extends TestCase

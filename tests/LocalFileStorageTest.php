@@ -2,7 +2,7 @@
 namespace wooo\tests;
 
 use wooo\core\LocalFile;
-use wooo\stdlib\fs\LocalFileStorage;
+use wooo\lib\fs\LocalFileStorage;
 use PHPUnit\Framework\TestCase;
 use wooo\core\IFile;
 use wooo\core\FileSystem;

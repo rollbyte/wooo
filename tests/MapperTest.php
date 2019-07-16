@@ -2,15 +2,15 @@
 namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
-use wooo\stdlib\dbal\PDODriver;
-use wooo\stdlib\orm\Mapper;
+use wooo\lib\dbal\PDODriver;
+use wooo\lib\orm\Mapper;
 use wooo\tests\orm\ClassD;
 use wooo\tests\orm\ClassC;
 use wooo\tests\orm\ClassA;
 use wooo\tests\orm\ClassB;
 use wooo\tests\orm\ClassE;
-use wooo\stdlib\orm\FO;
-use wooo\stdlib\orm\AGGREG;
+use wooo\lib\orm\FO;
+use wooo\lib\orm\AGGREG;
 use wooo\tests\orm\ClassF;
 use wooo\core\DateTime;
 

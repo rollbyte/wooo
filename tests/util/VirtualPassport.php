@@ -1,9 +1,9 @@
 <?php
 namespace wooo\tests\util;
 
-use wooo\stdlib\auth\interfaces\IUser;
-use wooo\stdlib\auth\interfaces\IPassport;
-use wooo\stdlib\auth\User;
+use wooo\lib\auth\interfaces\IUser;
+use wooo\lib\auth\interfaces\IPassport;
+use wooo\lib\auth\User;
 
 class VirtualPassport implements IPassport
 {
