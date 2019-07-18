@@ -209,9 +209,9 @@ class App
             if (is_array($path)) {
                 $fits = false;
                 foreach ($path as $pth) {
-                    if ($this->request()->checkPath($path)) {
+                    if ($this->request()->checkPath($pth)) {
                         $fits = true;
-                        $this->request()->parsePath($path);
+                        $this->request()->parsePath($pth);
                         break;
                     }
                 }
