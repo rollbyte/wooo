@@ -206,10 +206,24 @@ class App
         }
     
         if ($path) {
-            if (!$this->request()->checkPath($path)) {
-                return $this;
+            if (is_array($path)) {
+                $fits = false;
+                foreach ($path as $pth) {
+                    if ($this->request()->checkPath($path)) {
+                        $fits = true;
+                        $this->request()->parsePath($path);
+                        break;
+                    }
+                }
+                if (!$fits) {
+                    return $this;
+                }
+            } elseif (is_string($path)) {
+                if (!$this->request()->checkPath($path)) {
+                    return $this;
+                }
+                $this->request()->parsePath($path);
             }
-            $this->request()->parsePath($path);
         }
     
         if ($method) {
