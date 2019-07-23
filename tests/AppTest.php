@@ -61,13 +61,23 @@ class AppTest extends TestCase
         $session->method('get')->will($this->returnCallback(function ($nm) {return self::$__SESSION[$nm];}));
         $session->method('set')->will($this->returnCallback(function ($nm, $v) {self::$__SESSION[$nm] = $v;}));
         
+        $_SERVER['REQUEST_URI'] = 'http://localhost/some/path';
+        
+        $app->method('appPath')->will($this->returnValue('/home'));
+        $app->method('appBase')->will($this->returnValue('http://localhost/'));
+        $app->method('appRoot')->will($this->returnValue(''));
+        $app->method('config')->will($this->returnValue($config));
+        $app->method('scope')->will($this->returnValue($scope));
+        $app->method('sysLog')->will($this->returnValue($log));
+        
         $req = $this->getMockBuilder(Request::class)
-        ->disableOriginalConstructor()
-        ->setMethods(['session', 'checkPath', 'parsePath', 'getMethod'])
+        ->setConstructorArgs([$app])
+        ->setMethods(['session', 'getMethod'])
         ->getMock();
         
+        $req->http_method = 'NONE';
+        
         $req->method('session')->will($this->returnValue($session));
-        $req->method('checkPath')->will($this->returnCallback(function ($pattern) {return $pattern === '/some/path';}));
         $req->method('getMethod')->will($this->returnCallback(function () use ($req) {return $req->http_method;}));
         
         $res = $this->getMockBuilder(Response::class)
@@ -79,14 +89,8 @@ class AppTest extends TestCase
         $res->method('setHeader')->will($this->returnSelf());
         $res->method('setCookie')->will($this->returnSelf());
         
-        $app->method('appPath')->will($this->returnValue('/home'));
-        $app->method('appBase')->will($this->returnValue('http://localhost/'));
-        $app->method('appRoot')->will($this->returnValue('/'));
-        $app->method('config')->will($this->returnValue($config));
-        $app->method('scope')->will($this->returnValue($scope));
         $app->method('request')->will($this->returnValue($req));
         $app->method('response')->will($this->returnValue($res));
-        $app->method('sysLog')->will($this->returnValue($log));
         
         $this->assertTrue(true);
         return $app;
@@ -124,6 +128,21 @@ class AppTest extends TestCase
             $checked = true;
         }, 'GET');
         $this->assertTrue($checked, 'routed by method use test failed');
+
+        $app->use('/:first(\w+)/:second', function (App $app, Request $req, Response $res) use (&$checked) {
+            $this->assertEquals('some', $req->getParameters()['first'], 'check explicit regexp parameter failed');
+            $this->assertEquals('path', $req->getParameters()['second'], 'check implicit regexp parameter failed');
+        }, 'GET');
+        
+        $app->use('/*/:second', function (App $app, Request $req, Response $res) use (&$checked) {
+            $this->assertEquals('path', $req->getParameters()['second'], 'check of one level path subst failed');
+        }, 'GET');
+        
+        $checked = false;
+        $app->use('/**', function (App $app, Request $req, Response $res) use (&$checked) {
+            $checked = true;
+        }, 'GET');
+        $this->assertTrue($checked, 'check of multilevel path subst failed');
     }
     
     /**
@@ -196,6 +215,20 @@ class AppTest extends TestCase
         ]);
         $this->assertNotEquals('invalid', $checked, 'invalid path dispatch test failed');
         $this->assertTrue($checked, 'basic dispatch test failed');
+        $checked = false;
+        $app->dispatch([
+            'some' => [
+                'path' => function (App $app, Request $req, Response $res) use (&$checked) {
+                    $checked = true;
+                },
+                ':second' => function (App $app, Request $req, Response $res) use (&$checked) {
+                    $this->assertEquals('path', $req->getParameters()['second'], 'routed dispatch param test failed');
+                }
+                
+            ] 
+        ]);
+        $this->assertNotEquals('invalid', $checked, 'invalid path dispatch test failed');
+        $this->assertTrue($checked, 'routed dispatch test failed');
         
         $checked = false;
         $app->request()->http_method = 'POST';

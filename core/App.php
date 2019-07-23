@@ -250,8 +250,8 @@ class App
     
         return $this;
     }
-  
-    public function dispatch(array $map): App
+    
+    private function iterateMap($map, $prefix = '')
     {
         foreach ($map as $path => $handler) {
             $method = null;
@@ -260,6 +260,7 @@ class App
                 $handler = isset($handler["handler"]) ? $handler["handler"] : null;
             }
             if ($handler) {
+                $path = ($prefix ? $prefix . '/' : '') . $path;
                 if ($path) {
                     $this->use($path, $handler, $method);
                 } else {
@@ -267,6 +268,32 @@ class App
                 }
             }
         }
+    }
+    
+    private function route($map, $i, $path)
+    {
+        if (isset($map[$path[$i]])) {
+            $h = $map[$path[$i]];
+            if (is_array($h) && !is_callable($h)) {
+                $this->route($map[$path[$i]], $i + 1, $path);
+                $method = isset($handler["method"]) ? $handler["method"] : null;
+                $handler = isset($handler["handler"]) ? $handler["handler"] : null;
+                if ($handler) {
+                    if ($i == count($path) - 1) {
+                        $this->use(join('/', array_slice($path, 0, $i)), $h, $method);
+                    }
+                }
+            } else if ((is_string($h) || is_callable($h)) && ($i == count($path) - 1)) {
+                $this->use(join('/', array_slice($path, 0, $i)), $h);
+            }
+        }
+        $this->iterateMap($map, join('/', array_slice($path, 0, $i)));
+    }
+  
+    public function dispatch(array $map): App
+    {
+        $path = explode('/', $this->request()->getPath());
+        $this->route($map, 1, $path);
         return $this;
     }
   

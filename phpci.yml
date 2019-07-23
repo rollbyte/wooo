@@ -3,12 +3,20 @@ setup:
     action: "update"
 test:
   php_cpd:
-    path: "wooo"
+    path: "core"
     standard: "PSR4"
     allow_failures: false
+  php_cpd:
+    path: "lib"
+    standard: "PSR4"
+    allow_failures: false    
   php_code_sniffer:
     path: 'wooo'
-    standard: "PSR1,PSR2"
+    standard: "PSR1,PSR2,PSR12"
+    allow_failures: false
+  php_code_sniffer:
+    path: 'lib'
+    standard: "PSR1,PSR2,PSR12"
     allow_failures: false
   php_unit:
     config: phpunit.xml

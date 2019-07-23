@@ -99,7 +99,10 @@ class Request
         } else {
             $this->uri = $_SERVER['REQUEST_URI'];
         }
-        $this->path = str_ireplace($app->appRoot(), '', parse_url($this->uri, PHP_URL_PATH));
+        $this->path = parse_url($this->uri, PHP_URL_PATH);
+        if ($app->appRoot() && $app->appRoot() !== '/') {
+            $this->path = str_ireplace($app->appRoot(), '', $this->path);
+        }
         if (!$this->path || $this->path[0] != '/') {
             $this->path = '/' . $this->path;
         }
@@ -211,23 +214,44 @@ class Request
         }
         return null;
     }
+    
+    private function pathRegExp($pattern): string
+    {
+        $re = preg_replace_callback(
+            '/\/|\*{1,2}|\:[\w_]+(\([^\/]+)?/i',
+            function ($v) {
+                if ($v[0] == '/') {
+                    return '\/';
+                } else if ($v[0] == '*') {
+                    return '[^\\/]*';
+                } else if ($v[0] == '**') {
+                    return '.*';
+                } else if (count($v) > 1) {
+                    return $v[1] . ($v[1][strlen($v[1]) - 1] == ')') ? '' : ')';
+                }
+                return '([\w%_-]+)';
+            },
+            $pattern
+        );
+        return '/^' . $re . '$/i';
+    }
   
     public function checkPath($pattern): bool
     {
-        $re = preg_replace('/\\\\:[a-z0-9_]+/i', '([a-z0-9%_]+)', preg_quote($pattern, '/'));
-        return preg_match('/^' . $re . '$/i', $this->path) ? true : false;
+        return preg_match($this->pathRegExp($pattern), $this->path) ? true : false;
     }
   
     public function parsePath($pattern): void
     {
-        $re = preg_replace('/\\\\:[a-z0-9_]+/i', '([a-z0-9%_]+)', preg_quote($pattern, '/'));
+        $re = $this->pathRegExp($pattern);
         $pvals = [];
-        $matched = preg_match('/^' . $re . '$/i', $this->path, $pvals);
+        $matched = preg_match($re, $this->path, $pvals);
         if ($matched) {
             $pnames = [];
-            preg_match_all('/:([a-z0-9_]+)/i', $pattern, $pnames, PREG_SET_ORDER);
+            preg_match_all('/:([\w_]+)/i', $pattern, $pnames, PREG_SET_ORDER);
             $this->pathParameters = [];
-            for ($i = 0; $i < count($pnames); $i++) {
+            $n = count($pnames);
+            for ($i = 0; $i < $n; $i++) {
                 $pn = $pnames[$i][1];
                 $this->pathParameters[$pn] = rawurldecode($pvals[$i + 1]);
             }
