@@ -11,7 +11,7 @@ test:
     standard: "PSR4"
     allow_failures: false    
   php_code_sniffer:
-    path: 'wooo'
+    path: 'core'
     standard: "PSR1,PSR2,PSR12"
     allow_failures: false
   php_code_sniffer:
