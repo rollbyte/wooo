@@ -130,16 +130,16 @@ class AppTest extends TestCase
         $this->assertTrue($checked, 'routed by method use test failed');
 
         $app->use('/:first(\w+)/:second', function (App $app, Request $req, Response $res) use (&$checked) {
-            $this->assertEquals('some', $req->getParameters()['first'], 'check explicit regexp parameter failed');
-            $this->assertEquals('path', $req->getParameters()['second'], 'check implicit regexp parameter failed');
+            $this->assertEquals('some', $req->getParameters()->first, 'check explicit regexp parameter failed');
+            $this->assertEquals('path', $req->getParameters()->second, 'check implicit regexp parameter failed');
         }, 'GET');
         
-        $app->use('/*/:second', function (App $app, Request $req, Response $res) use (&$checked) {
-            $this->assertEquals('path', $req->getParameters()['second'], 'check of one level path subst failed');
+        $app->use('/\w+/:second', function (App $app, Request $req, Response $res) use (&$checked) {
+            $this->assertEquals('path', $req->getParameters()->second, 'check of one level path subst failed');
         }, 'GET');
         
         $checked = false;
-        $app->use('/**', function (App $app, Request $req, Response $res) use (&$checked) {
+        $app->use('/', function (App $app, Request $req, Response $res) use (&$checked) {
             $checked = true;
         }, 'GET');
         $this->assertTrue($checked, 'check of multilevel path subst failed');
@@ -222,7 +222,7 @@ class AppTest extends TestCase
                     $checked = true;
                 },
                 ':second' => function (App $app, Request $req, Response $res) use (&$checked) {
-                    $this->assertEquals('path', $req->getParameters()['second'], 'routed dispatch param test failed');
+                    $this->assertEquals('path', $req->getParameters()->second, 'routed dispatch param test failed');
                 }
                 
             ] 

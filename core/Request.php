@@ -12,19 +12,17 @@ class Request
      */
     private $IsXmlHttpRequest = false;
   
-    private $JsonObject = null;
-  
     private $uri;
   
     private $path;
   
-    private $queryParameters = [];
+    private $queryParameters = null;
   
-    private $bodyParameters = [];
+    private $body = null;
   
-    private $fileParameters = [];
+    private $fileParameters = null;
   
-    private $pathParameters = [];
+    private $pathParameters = null;
     
     private $locals = [];
   
@@ -69,6 +67,8 @@ class Request
             $v = $this->acceptValue($value, $urldecode);
             if (is_array($member)) {
                 $member[$key] = $v;
+            } else if (is_object($member)) {
+                $member->$key = $v;
             }
         }
     }
@@ -114,10 +114,6 @@ class Request
         $this->IsXmlHttpRequest = strtolower($this->getHeader('X_REQUESTED_WITH')) == 'xmlhttprequest';
         $this->IsHttps = isset($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != 'off');
     
-        if (strtolower($this->getHeader('Content-Type')) == 'application/json') {
-            $this->JsonObject = json_decode($this->getRawPostData());
-        }
-    
         if ($tzh = $app->config()->get('tzHeader')) {
             $tz = $this->getHeader($tzh);
             if ($tz) {
@@ -143,9 +139,18 @@ class Request
         } else {
             $this->locale = new Locale(\Locale::getDefault());
         }
+        
+        $this->queryParameters = new \stdClass();
+        $this->fileParameters = new \stdClass();
+        $this->pathParameters = new \stdClass();
     
         $this->acceptParams($_GET, true, $this->queryParameters);
-        $this->acceptParams($_POST, false, $this->bodyParameters);
+        if (strtolower($this->getHeader('Content-Type')) == 'application/json') {
+            $this->body = json_decode($this->getRawPostData());
+        } else {
+            $this->body = new \stdClass();
+            $this->acceptParams($_POST, false, $this->body);
+        }
     
         foreach ($_FILES as $key => $file) {
             if (is_array($file)/* && (($file['error'] == 0) || is_array($file['error']))*/) {
@@ -170,9 +175,9 @@ class Request
                             );
                         }
                     }
-                    $this->fileParameters[$key] = $files;
+                    $this->fileParameters->$key = $files;
                 } else {
-                    $this->fileParameters[$key] = new UploadedFile($file);
+                    $this->fileParameters->$key = new UploadedFile($file);
                 }
             }
         }
@@ -222,10 +227,6 @@ class Request
             function ($v) {
                 if ($v[0] == '/') {
                     return '\/';
-                } else if ($v[0] == '*') {
-                    return '[^\\/]*';
-                } else if ($v[0] == '**') {
-                    return '.*';
                 } else if (count($v) > 1) {
                     return $v[1] . ($v[1][strlen($v[1]) - 1] == ')') ? '' : ')';
                 }
@@ -233,7 +234,7 @@ class Request
             },
             $pattern
         );
-        return '/^' . $re . '$/i';
+        return '/^' . $re . '/i';
     }
   
     public function checkPath($pattern): bool
@@ -249,11 +250,11 @@ class Request
         if ($matched) {
             $pnames = [];
             preg_match_all('/:([\w_]+)/i', $pattern, $pnames, PREG_SET_ORDER);
-            $this->pathParameters = [];
+            $this->pathParameters = new \stdClass();
             $n = count($pnames);
             for ($i = 0; $i < $n; $i++) {
                 $pn = $pnames[$i][1];
-                $this->pathParameters[$pn] = rawurldecode($pvals[$i + 1]);
+                $this->pathParameters->$pn = rawurldecode($pvals[$i + 1]);
             }
         }
     }
@@ -298,27 +299,22 @@ class Request
         return $this->path;
     }
   
-    public function getParameters(): array
+    public function getParameters(): object
     {
         return $this->pathParameters;
     }
   
-    public function getQuery(): array
+    public function getQuery(): object
     {
         return $this->queryParameters;
     }
   
-    public function getBody(): array
+    public function getBody(): object
     {
         return $this->bodyParameters;
     }
   
-    public function getJson(): ?object
-    {
-        return $this->JsonObject;
-    }
-  
-    public function getFiles(): array
+    public function getFiles(): object
     {
         return $this->fileParameters;
     }
@@ -330,6 +326,23 @@ class Request
     
     public function __get($nm)
     {
-        return $this->locals[$nm];
+        if (isset($this->locals[$nm])) {
+            return $this->locals[$nm];
+        }
+        if ($this->JsonObject && isset($this->JsonObject->$nm)) {
+            return $this->JsonObject->$nm;
+        }
+        if (isset($this->body->$nm)) {
+            return $this->body->$nm;
+        }
+        if (isset($this->fileParameters->$nm)) {
+            return $this->fileParameters->$nm;
+        }
+        if (isset($this->pathParameters->$nm)) {
+            return $this->pathParameters->$nm;
+        }
+        if (isset($this->queryParameters->$nm)) {
+            return $this->queryParameters->$nm;
+        }
     }
 }
