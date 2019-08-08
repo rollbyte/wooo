@@ -7,4 +7,4 @@ spl_autoload_register(function ($class) {
             include_once $php;
         }
     }
-}, true, true);	
+}, true, true);

@@ -250,7 +250,6 @@ class Request
         if ($matched) {
             $pnames = [];
             preg_match_all('/:([\w_]+)/i', $pattern, $pnames, PREG_SET_ORDER);
-            $this->pathParams = new \stdClass();
             $n = count($pnames);
             for ($i = 0; $i < $n; $i++) {
                 $pn = $pnames[$i][1];

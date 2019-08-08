@@ -194,6 +194,22 @@ class App
             $this->response()->setStatus(500)->send($e->getMessage());
         }
     }
+    
+    private function runRouter(string $context, Router $r) {
+        $rw = new class extends Router
+        {   
+            public function run(App $app, string $context, Router $r)
+            {
+                foreach ($r->map as $pth => $metas) {
+                    foreach ($metas as $meta) {
+                        $app->use($context . $pth, $meta['handler'], $meta['method']);
+                    }
+                }
+            }
+        };
+        $rw->run($this, $context, $r);
+    }
+    
   
     public function use($arg0, $arg1 = null, $arg2 = null): App
     {
@@ -236,16 +252,20 @@ class App
             if (is_string($module)) {
                 $module = include $module;
             }
-            if (!is_callable($module)) {
-                if ($path) {
-                    $this->sysLog()->warn('Invalid handler set for path ' . $path);
-                    $this->response()->setStatus(404)->send('Resource not found!');
-                } else {
-                    $this->sysLog()->error(new InternalException('Invalid middleware injected.'));
-                    $this->response()->setStatus(500)->send('Internal server error!');
+            if ($module instanceof Router) {
+                $this->runRouter($path ?? '', $module);
+            } else {
+                if (!is_callable($module)) {
+                    if ($path) {
+                        $this->sysLog()->warn('Invalid handler set for path ' . $path);
+                        $this->response()->setStatus(404)->send('Resource not found!');
+                    } else {
+                        $this->sysLog()->error(new InternalException('Invalid middleware injected.'));
+                        $this->response()->setStatus(500)->send('Internal server error!');
+                    }
                 }
+                $this->run($module);
             }
-            $this->run($module);
         }
     
         return $this;
@@ -315,6 +335,21 @@ class App
     public function put($arg0, $arg1 = null): App
     {
         return $this->use($arg0, $arg1, 'PUT');
+    }
+    
+    public function patch($arg0, $arg1 = null): App
+    {
+        return $this->use($arg0, $arg1, 'PATCH');
+    }
+    
+    public function head($arg0, $arg1 = null): App
+    {
+        return $this->use($arg0, $arg1, 'HEAD');
+    }
+    
+    public function search($arg0, $arg1 = null): App
+    {
+        return $this->use($arg0, $arg1, 'SEARCH');
     }
     
     public function notFound()
