@@ -13,7 +13,7 @@ class Router
         $this->map[$path][] = $meta;
     }
     
-    public function use($arg0, $arg1 = null, $arg2 = null): Route
+    public function use($arg0, $arg1 = null, $arg2 = null): Router
     {
         $path = $arg0;
         $module = $arg1;
@@ -45,37 +45,37 @@ class Router
         return $this;
     }
     
-    public function get($arg0, $arg1 = null): Route
+    public function get($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'GET');
     }
     
-    public function post($arg0, $arg1 = null): Route
+    public function post($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'POST');
     }
     
-    public function delete($arg0, $arg1 = null): Route
+    public function delete($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'DELETE');
     }
     
-    public function put($arg0, $arg1 = null): Route
+    public function put($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'PUT');
     }
     
-    public function patch($arg0, $arg1 = null): Route
+    public function patch($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'PATCH');
     }
     
-    public function head($arg0, $arg1 = null): Route
+    public function head($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'HEAD');
     }
     
-    public function search($arg0, $arg1 = null): Route
+    public function search($arg0, $arg1 = null): Router
     {
         return $this->use($arg0, $arg1, 'SEARCH');
     }
