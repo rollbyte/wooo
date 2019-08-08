@@ -198,16 +198,16 @@ class App
     private function runRouter(string $context, Router $r) {
         $rw = new class extends Router
         {   
-            public function run(App $app, string $context, Router $r)
+            public function __run(App $app, string $context, Router $r)
             {
                 foreach ($r->map as $pth => $metas) {
                     foreach ($metas as $meta) {
-                        $app->use($context . $pth, $meta['handler'], $meta['method']);
+                        $app->use($context . $pth, $meta['handler'], $meta['method'] ?? null);
                     }
                 }
             }
         };
-        $rw->run($this, $context, $r);
+        $rw->__run($this, $context, $r);
     }
     
   

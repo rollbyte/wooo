@@ -11,6 +11,7 @@ use wooo\core\Session;
 use wooo\core\Response;
 use wooo\tests\util\ComponentMock2;
 use wooo\core\Log;
+use wooo\core\Router;
 
 class AppTest extends TestCase
 {
@@ -143,6 +144,20 @@ class AppTest extends TestCase
             $checked = true;
         }, 'GET');
         $this->assertTrue($checked, 'check of multilevel path subst failed');
+    }
+    
+    /**
+     * @depends testConstructor
+     */
+    public function testRouter(App $app): void
+    {
+        $router = new Router();
+        $checked = false;
+        $router->use('/path', function (Request $req) use (&$checked) {
+            $checked = true;
+        });
+        $app->use('/some', $router);
+        $this->assertTrue($checked, 'check of Router using failed');
     }
     
     /**
