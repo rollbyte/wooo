@@ -329,17 +329,17 @@ class Request
         if (isset($this->locals[$nm])) {
             return $this->locals[$nm];
         }
-        if (isset($this->body->$nm)) {
-            return $this->body->$nm;
+        if (isset($this->getBody()->$nm)) {
+            return $this->getBody()->$nm;
         }
-        if (isset($this->files->$nm)) {
-            return $this->files->$nm;
+        if (isset($this->getFiles()->$nm)) {
+            return $this->getFiles()->$nm;
         }
-        if (isset($this->pathParams->$nm)) {
-            return $this->pathParams->$nm;
+        if (isset($this->getParameters()->$nm)) {
+            return $this->getParameters()->$nm;
         }
-        if (isset($this->query->$nm)) {
-            return $this->query->$nm;
+        if (isset($this->getQuery()->$nm)) {
+            return $this->getQuery()->$nm;
         }
     }
 }
