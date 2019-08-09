@@ -119,6 +119,11 @@ class PDODriver implements wooo\DbDriver
                 if ($value instanceof \DateTime) {
                     if ($this->dateTimeZone) {
                         $value = $value->setTimezone(new \DateTimeZone($this->dateTimeZone));
+                    } else {
+                        $env_tz = date_default_timezone_get();
+                        if ($value->getTimezone()->getName() !== $env_tz) {
+                            $value->setTimezone(new \DateTimeZone($env_tz));
+                        }
                     }
                     $value = $value->format($this->dateTimeFormat);
                 }
