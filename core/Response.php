@@ -7,11 +7,19 @@ class Response
     private $variables = [];
     
     private $app;
+    
+    private $engine;
   
     public function __construct(App $app)
     {
         $this->app = $app;
         $this->variables = $app->config()->values();
+    }
+    
+    public function setTemplateEngine(?ITemplateEngine $engine): Response
+    {
+        $this->engine = $engine;
+        return $this;
     }
     
     public function set($nm, $value): Response
@@ -35,11 +43,19 @@ class Response
         exit();
     }
   
-    public function render($path, $data)
+    public function render(string $path, array $data = [])
     {
-        extract($this->variables, EXTR_OVERWRITE);
-        extract($data, EXTR_OVERWRITE);
-        include $path;
+        if ($this->engine) {
+            $this->engine->render($path, array_merge($data, $this->variables));
+        } else {
+            extract($this->variables, EXTR_OVERWRITE);
+            extract($data, EXTR_OVERWRITE);
+            $ext = pathinfo($path, PATHINFO_EXTENSION);
+            if ($ext !== '.php') {
+                $path = $path . '.php';
+            }
+            include $path;
+        }
         exit();
     }
   
