@@ -168,25 +168,30 @@ class Scope implements ContainerInterface
             return $v;
         }
         if (isset($this->di[$name])) {
-            $cn = $this->parseValue($this->di[$name]['module']);
-            $this->registry[$name] = 'loading';
-            $c = new \ReflectionClass($cn);
-            $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $this->di[$name]['args'] ?? []));
-            if (!isset($this->di[$name]['singleton']) || $this->di[$name]['singleton'] == true) {
+            if (is_string($this->di[$name])) {
+                $component = $this->evaluate($this->parseValue($this->di[$name]));
                 $this->registry[$name] = $component;
-            }
-            if (isset($this->di[$name]["options"])) {
-                try {
-                    $opts = $this->parseOptions($c, $this->di[$name]["options"]);
-                } catch (\Exception $e) {
-                    throw new ScopeException(ScopeException::COMPONENT_FAILED, [$name], $e);
+            } else if (is_array($this->di[$name])) {
+                $cn = $this->parseValue($this->di[$name]['module']);
+                $this->registry[$name] = 'loading';
+                $c = new \ReflectionClass($cn);
+                $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $this->di[$name]['args'] ?? []));
+                if (!isset($this->di[$name]['singleton']) || $this->di[$name]['singleton'] == true) {
+                    $this->registry[$name] = $component;
                 }
-                foreach ($opts as $m => $v) {
-                    if (!is_array($v)) {
-                        $v = [$v];
+                if (isset($this->di[$name]["options"])) {
+                    try {
+                        $opts = $this->parseOptions($c, $this->di[$name]["options"]);
+                    } catch (\Exception $e) {
+                        throw new ScopeException(ScopeException::COMPONENT_FAILED, [$name], $e);
                     }
-                    foreach ($v as $v1) {
-                        $c->getMethod($m)->invoke($component, $v1);
+                    foreach ($opts as $m => $v) {
+                        if (!is_array($v)) {
+                            $v = [$v];
+                        }
+                        foreach ($v as $v1) {
+                            $c->getMethod($m)->invoke($component, $v1);
+                        }
                     }
                 }
             }
