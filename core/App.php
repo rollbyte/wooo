@@ -75,9 +75,29 @@ class App
         return $this->appBasePath;
     }
   
-    public function __construct($appPath, $config = [], $di = [])
+    public function __construct($arg0 = null, $arg1 = null, $arg2 = null)
     {
-        $this->appPath = $appPath;
+        $appPath = null;
+        $config = [];
+        $di = [];
+        if (is_string($arg0)) {
+            $appPath = $arg0;
+            if (is_array($arg1)) {
+                $config = $arg1;
+            }
+            if (is_array($arg2)) {
+                $di = $arg2;
+            }
+        } else {
+            if (is_array($arg0)) {
+                $config = $arg0;
+            }
+            if (is_array($arg1)) {
+                $di = $arg1;
+            }
+        }
+        
+        $this->appPath = $appPath ? $appPath : getcwd();
         $this->config = new Config($config);
         $this->appRoot = '';
         $this->appBasePath = $appPath;
@@ -93,7 +113,7 @@ class App
         }
         $INCLUDE_PATH = get_include_path() . PATH_SEPARATOR .
                         realpath(__DIR__ . '/../..') .
-                        PATH_SEPARATOR . $appPath;
+                        ($appPath ? PATH_SEPARATOR . $appPath : '');
     
         $PATH = $this->config->get('PATH');
         if ($PATH) {
