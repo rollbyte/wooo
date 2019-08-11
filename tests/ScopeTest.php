@@ -30,7 +30,7 @@ class ScopeTest extends TestCase
         $app->method('appRoot')->will($this->returnValue('/'));
         $app->method('config')->will($this->returnValue($config));
             
-        $scope = new Scope($app, [
+        $scope = new Scope([
             'com1' => [
                 'module' => 'wooo\tests\util\${ComponentMock}',
                 'args' => ['${value1}'],
@@ -52,7 +52,7 @@ class ScopeTest extends TestCase
             'com4' => [
                 'module' => 'wooo\tests\util\ComponentMock2'
             ]
-        ]);
+        ], $app);
         $this->assertInstanceOf(Scope::class, $scope, 'scope initialization test failed');
         $this->assertInstanceOf(ComponentMock::class, $scope->com1, 'scope component initialization test failed');
         $this->assertInstanceOf(ComponentMock::class, $scope->com2, 'scope component initialization test failed');

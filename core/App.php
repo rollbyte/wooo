@@ -39,6 +39,10 @@ class App
      * @var \wooo\core\ILog
      */
     private $log;
+    
+    private static $HTTP_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'SEARCH', 'HEAD'];
+    
+    private $rw;
   
     public function scope(): Scope
     {
@@ -74,31 +78,32 @@ class App
     {
         return $this->appBasePath;
     }
+    
+    private function acceptCArg($arg) {
+        if (is_string($arg)) {
+            $this->appPath = $arg;
+        } else if (is_array($arg)) {
+            if (!$this->config) {
+                $this->config = new Config($arg);
+            } else if (!$this->scope) {
+                $this->scope = new Scope($arg, $this);
+            }
+        } else if ($arg instanceof Config) {
+            $this->config = $arg;
+        } else if ($arg instanceof Scope) {
+            $this->scope = $arg;
+            $this->scope->setApplicationContext($this);
+        }
+    }
   
     public function __construct($arg0 = null, $arg1 = null, $arg2 = null)
     {
-        $appPath = null;
-        $config = [];
-        $di = [];
-        if (is_string($arg0)) {
-            $appPath = $arg0;
-            if (is_array($arg1)) {
-                $config = $arg1;
-            }
-            if (is_array($arg2)) {
-                $di = $arg2;
-            }
-        } else {
-            if (is_array($arg0)) {
-                $config = $arg0;
-            }
-            if (is_array($arg1)) {
-                $di = $arg1;
-            }
-        }
+        $this->appPath = getcwd();
         
-        $this->appPath = $appPath ? $appPath : getcwd();
-        $this->config = new Config($config);
+        $this->acceptCArg($arg0 ?? null);
+        $this->acceptCArg($arg1 ?? []);
+        $this->acceptCArg($arg2 ?? []);
+        
         $this->appRoot = '';
         $this->appBasePath = $appPath;
         
@@ -131,7 +136,6 @@ class App
             $this->req = new Request($this);
             $this->res = new Response($this);
         }
-        $this->scope = new Scope($this, $di);
     }
   
     public function log(ILog $log): App
@@ -215,60 +219,82 @@ class App
         }
     }
     
-    private function runRouter(string $context, Router $r) {
-        $rw = new class extends Router
-        {   
-            public function __run(App $app, string $context, Router $r)
+    private function getRouterWrapper()
+    {
+        if (!$this->rw) {
+            $this->rw = new class extends Router
             {
-                foreach ($r->map as $pth => $metas) {
-                    foreach ($metas as $meta) {
-                        $app->use($context . $pth, $meta['handler'], $meta['method'] ?? null);
-                    }
+                public function __map(Router $r): array
+                {
+                    return $r->map;
                 }
+            };
+        }
+        return $this->rw;
+    }
+    
+    private function runRouter(string $context, Router $r) {
+        $map = $this->getRouterWrapper()->__map($r);
+        foreach ($map as $args) {
+            $paths = [];
+            $methods = [];
+            $handlers = [];
+            $this->readUseArgs($args, $paths, $methods, $handlers, $context);
+            call_user_func_array([$this, 'use'], array_merge($paths, $methods, $handlers));
+        }
+    }
+    
+    private function readUseArgs(array $src, array &$paths, array &$methods, array &$handlers, $context = ''): void
+    {
+        foreach ($src as $i => $arg) {
+            if (is_string($arg)) {
+                if (in_array(strtoupper($arg), self::$HTTP_METHODS, true)) {
+                    $methods[] = strtoupper($arg);
+                } else if (!$arg || $arg[0] == '/') {
+                    $paths[] = $context . $arg;
+                } else {
+                    $handlers[] = $arg;
+                }
+            } else if (is_array($arg)) {
+                $this->readUseArgs($arg, $paths, $methods, $handlers, $context);
+            } else if (is_callable($arg) || ($arg instanceof Router)) {
+                $handlers[] = $arg;
             }
-        };
-        $rw->__run($this, $context, $r);
+        }
     }
     
   
-    public function use($arg0, $arg1 = null, $arg2 = null): App
+    public function use($arg0): App
     {
-        $path = $arg0;
-        $module = $arg1;
-        $method = $arg2;
-        if (!$module) {
-            $module = $path;
-            $path = null;
-        }
+        $paths = [];
+        $methods = [];
+        $modules = [];
+        $args = func_get_args();
+        
+        $this->readUseArgs($args, $paths, $methods, $modules);
     
-        if ($path) {
-            if (is_array($path)) {
-                $fits = false;
-                foreach ($path as $pth) {
-                    if ($this->request()->checkPath($pth)) {
-                        $fits = true;
-                        $this->request()->parsePath($pth);
-                        break;
-                    }
+        $path = null;
+        if (!empty($paths)) {
+            $fits = false;
+            foreach ($paths as $pth) {
+                if ($this->request()->checkPath($pth)) {
+                    $fits = true;
+                    $path = $pth;
+                    $this->request()->parsePath($pth);
                 }
-                if (!$fits) {
-                    return $this;
-                }
-            } elseif (is_string($path)) {
-                if (!$this->request()->checkPath($path)) {
-                    return $this;
-                }
-                $this->request()->parsePath($path);
             }
-        }
-    
-        if ($method) {
-            if ($this->request()->getMethod() != $method) {
+            if (!$fits) {
                 return $this;
             }
         }
     
-        if ($module) {
+        if (!empty($methods)) {
+            if (!in_array($this->request()->getMethod(), $methods)) {
+                return $this;
+            }
+        }
+    
+        foreach ($modules as $module) {
             if (is_string($module)) {
                 $module = include $module;
             }
@@ -276,13 +302,8 @@ class App
                 $this->runRouter($path ?? '', $module);
             } else {
                 if (!is_callable($module)) {
-                    if ($path) {
-                        $this->sysLog()->warn('Invalid handler set for path ' . $path);
-                        $this->response()->setStatus(404)->send('Resource not found!');
-                    } else {
-                        $this->sysLog()->error(new InternalException('Invalid middleware injected.'));
-                        $this->response()->setStatus(500)->send('Internal server error!');
-                    }
+                    $this->sysLog()->error(new InternalException('Invalid middleware injected.'));
+                    $this->response()->setStatus(500)->send('Internal server error!');
                 }
                 $this->run($module);
             }
@@ -336,40 +357,102 @@ class App
         $this->route($map, 1, $path);
         return $this;
     }
-  
-    public function get($arg0, $arg1 = null): App
+    
+    private function forceMethod($method, $args): array
     {
-        return $this->use($arg0, $arg1, 'GET');
+        $result = array_filter(
+            $args,
+            function ($arg) use ($method) {return !is_string($arg) || (strtoupper($arg) != $method);}
+            );
+        array_walk(
+            $result,
+            function (&$arg) use ($method) {
+                if (is_array($arg)) {
+                    $arg = $this->forceMethod($method, $arg);
+                    if (empty($arg)) {
+                        $arg = false;
+                    }
+                }
+            }
+            );
+        return array_filter($result);
     }
   
-    public function post($arg0, $arg1 = null): App
+    public function get($arg0): App
     {
-        return $this->use($arg0, $arg1, 'POST');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['GET'],
+                $this->forceMethod('GET', func_get_args())
+            )
+        );
     }
   
-    public function delete($arg0, $arg1 = null): App
+    public function post($arg0): App
     {
-        return $this->use($arg0, $arg1, 'DELETE');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['POST'],
+                $this->forceMethod('POST', func_get_args())
+            )
+        );
     }
   
-    public function put($arg0, $arg1 = null): App
+    public function delete($arg0): App
     {
-        return $this->use($arg0, $arg1, 'PUT');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['DELETE'],
+                $this->forceMethod('DELETE', func_get_args())
+            )
+        );
+    }
+  
+    public function put($arg0): App
+    {
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['PUT'],
+                $this->forceMethod('PUT', func_get_args())
+            )
+        );
     }
     
-    public function patch($arg0, $arg1 = null): App
+    public function patch($arg0): App
     {
-        return $this->use($arg0, $arg1, 'PATCH');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['PATCH'],
+                $this->forceMethod('PATCH', func_get_args())
+            )
+        );
     }
     
-    public function head($arg0, $arg1 = null): App
+    public function head($arg0): App
     {
-        return $this->use($arg0, $arg1, 'HEAD');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['HEAD'],
+                $this->forceMethod('HEAD', func_get_args())
+            )
+        );
     }
     
-    public function search($arg0, $arg1 = null): App
+    public function search($arg0): App
     {
-        return $this->use($arg0, $arg1, 'SEARCH');
+        return call_user_func_array(
+            [$this, 'use'],
+            array_merge(
+                ['SEARCH'],
+                $this->forceMethod('SEARCH', func_get_args())
+            )
+        );
     }
     
     public function notFound()

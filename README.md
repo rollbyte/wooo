@@ -3,7 +3,7 @@ PHP7 framework
 
 ## Overview
 
-Wooo is a lightweight web application framework written in PHP7. It implements a chain-of-responsibility design pattern for request handling. The framework provides IOC container, DBAL, ORM and basic authentication out of the box.
+Wooo is a lightweight web application framework written in PHP7. It implements a chain-of-responsibility design pattern for request handling. The framework provides IoC container, DBAL, ORM and basic authentication out of the box.
 
 ## Quick start
 
@@ -36,7 +36,7 @@ class MyComponent implements IComponent {
 }
 ```
 
-Initialize application as an IOC container
+Initialize application as an IoC container
 
 ```php
 require './vendor/autoload.php';

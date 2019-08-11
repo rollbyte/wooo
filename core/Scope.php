@@ -17,7 +17,7 @@ class Scope implements ContainerInterface
   
     private $registry = [];
   
-    public function __construct(App $app, array $di)
+    public function __construct(array $di = [], ?App $app = null)
     {
         $this->app = $app;
         $this->di = $di;
@@ -31,14 +31,12 @@ class Scope implements ContainerInterface
                 function ($m) {
                     switch ($m[1]) {
                         case 'APP_PATH':
-                            return $this->app->appPath();
+                            return $this->app ? $this->app->appPath() : '';
                         case 'APP_BASE':
-                            return $this->app->appBase();
+                            return $this->app ? $this->app->appBase() : '';
                         default:
-                            return $this->app->config()->get(
-                                $m[1],
-                                $_ENV[$m[1]] ?? isset($_SERVER[$m[1]]) ? $_SERVER[$m[1]] : null
-                            );
+                            $default = $_ENV[$m[1]] ?? isset($_SERVER[$m[1]]) ? $_SERVER[$m[1]] : null;
+                            return $this->app ? $this->app->config()->get($m[1], $default) : $default;
                     }
                 },
                 $v
@@ -81,19 +79,20 @@ class Scope implements ContainerInterface
                 $tmp = null;
                 if ($type instanceof \ReflectionNamedType) {
                     $className = $type->getName();
-                    if ($className === App::class) {
-                        $tmp = $this->app;
+                    if ($this->app) {
+                        if ($className === App::class) {
+                            $tmp = $this->app;
+                        }
+                        if ($className === Config::class) {
+                            $tmp = $this->app->config();
+                        }
+                        if ($className === Request::class) {
+                            $tmp = $this->app->request();
+                        }
+                        if ($className === Response::class) {
+                            $tmp = $this->app->response();
+                        }
                     }
-                    if ($className === Config::class) {
-                        $tmp = $this->app->config();
-                    }
-                    if ($className === Request::class) {
-                        $tmp = $this->app->request();
-                    }
-                    if ($className === Response::class) {
-                        $tmp = $this->app->response();
-                    }
-                
                     if (!$tmp) {
                         $pv = null;
                         if ($j < $n1) {
@@ -108,7 +107,7 @@ class Scope implements ContainerInterface
                         }
                     }
                     
-                    if (!$tmp &&
+                    if (!$tmp && $this->app &&
                         ($type->getName() === ILog::class || $type->getName() === Log::class)) {
                         $tmp = $this->app->sysLog();
                     }
@@ -198,6 +197,11 @@ class Scope implements ContainerInterface
             return $component;
         }
         return null;
+    }
+    
+    public function setApplicationContext(App $app)
+    {
+        $this->app = $app;
     }
     
     public function get($nm)

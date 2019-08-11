@@ -5,78 +5,78 @@ class Router
 {
     protected $map = [];
     
-    private function addRoute($path, $meta)
+    private function forceMethod($method, $args): array
     {
-        if (!isset($this->map[$path])) {
-            $this->map[$path] = [];
-        }
-        $this->map[$path][] = $meta;
+        $result = array_filter(
+            $args,
+            function ($arg) use ($method) {return !is_string($arg) || (strtoupper($arg) != $method);}
+        );
+        array_walk(
+            $result,
+            function (&$arg) use ($method) {
+                if (is_array($arg)) {
+                    $arg = $this->forceMethod($method, $arg);
+                    if (empty($arg)) {
+                        $arg = false;
+                    }
+                }
+            }
+        );
+        return array_filter($result);
     }
     
-    public function use($arg0, $arg1 = null, $arg2 = null): Router
+    public function use($arg0): Router
     {
-        $path = $arg0;
-        $module = $arg1;
-        $method = $arg2;
-        if (!$module) {
-            $module = $path;
-            $path = null;
-        }
-        
-        if ($module) {
-            $meta = ['handler' => $module];
-            if ($method) {
-                $meta['method'] = $method;
-            }
-            
-            if ($path) {
-                if (is_array($path)) {
-                    foreach ($path as $pth) {
-                        $this->addRoute($pth, $meta);
-                    }
-                } elseif (is_string($path)) {
-                    $this->addRoute($path, $meta);
-                }
-            } else {
-                $this->addRoute('', $meta);
-            }
-        }
-        
+        $this->map[] = func_get_args();
         return $this;
     }
     
-    public function get($arg0, $arg1 = null): Router
+    public function get($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'GET');
+        $args = func_get_args();
+        $this->map[] = array_merge(['GET'], $this->forceMethod('GET', $args));
+        return $this;
     }
     
-    public function post($arg0, $arg1 = null): Router
+    public function post($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'POST');
+        $args = func_get_args();
+        $this->map[] = array_merge(['POST'], $this->forceMethod('POST', $args));
+        return $this;
     }
     
-    public function delete($arg0, $arg1 = null): Router
+    public function delete($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'DELETE');
+        $args = func_get_args();
+        $this->map[] = array_merge(['DELETE'], $this->forceMethod('DELETE', $args));
+        return $this;
     }
     
-    public function put($arg0, $arg1 = null): Router
+    public function put($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'PUT');
+        $args = func_get_args();
+        $this->map[] = array_merge(['PUT'], $this->forceMethod('PUT', $args));
+        return $this;
     }
     
-    public function patch($arg0, $arg1 = null): Router
+    public function patch($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'PATCH');
+        $args = func_get_args();
+        $this->map[] = array_merge(['PATCH'], $this->forceMethod('PATCH', $args));
+        return $this;
     }
     
-    public function head($arg0, $arg1 = null): Router
+    public function head($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'HEAD');
+        $args = func_get_args();
+        $this->map[] = array_merge(['HEAD'], $this->forceMethod('HEAD', $args));
+        return $this;
     }
     
-    public function search($arg0, $arg1 = null): Router
+    public function search($arg0): Router
     {
-        return $this->use($arg0, $arg1, 'SEARCH');
+        $args = func_get_args();
+        $this->map[] = array_merge(['SEARCH'], $this->forceMethod('SEARCH', $args));
+        return $this;
     }
 }

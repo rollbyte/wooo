@@ -107,7 +107,7 @@ class AppTest extends TestCase
         ->use(function (App $app, Request $req, ComponentMock2 $com) use (&$checked) {
             $checked = true;
         })
-        ->use('invalid/path', function (App $app, Request $req, Response $res) use (&$checked) {
+        ->use('/invalid/path', function (App $app, Request $req, Response $res) use (&$checked) {
             $checked = 'invalid';
         });
         
