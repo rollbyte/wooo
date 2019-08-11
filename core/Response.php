@@ -51,7 +51,7 @@ class Response
             extract($this->variables, EXTR_OVERWRITE);
             extract($data, EXTR_OVERWRITE);
             $ext = pathinfo($path, PATHINFO_EXTENSION);
-            if ($ext !== 'php') {
+            if (!$ext) {
                 $path = $path . '.php';
             }
             include $path;
