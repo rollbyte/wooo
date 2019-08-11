@@ -116,9 +116,7 @@ class App
             $schema = isset($_SERVER['HTTPS']) ? 'https' : 'http';
             $this->appBasePath = "$schema://$host$this->appRoot";
         }
-        $INCLUDE_PATH = get_include_path() . PATH_SEPARATOR .
-                        realpath(__DIR__ . '/../..') .
-                        ($appPath ? PATH_SEPARATOR . $appPath : '');
+        $INCLUDE_PATH = get_include_path() . PATH_SEPARATOR . $this->appPath;
     
         $PATH = $this->config->get('PATH');
         if ($PATH) {
