@@ -33,7 +33,7 @@ class App
   
     private $appRoot;
   
-    private $appBasePath;
+    private $appBase;
   
     /**
      * @var \wooo\core\ILog
@@ -76,7 +76,7 @@ class App
   
     public function appBase(): string
     {
-        return $this->appBasePath;
+        return $this->appBase;
     }
     
     private function acceptCArg($arg) {
@@ -105,7 +105,7 @@ class App
         $this->acceptCArg($arg2 ?? []);
         
         $this->appRoot = '';
-        $this->appBasePath = $appPath;
+        $this->appBase = $appPath;
         
         $isWeb = false;
         
@@ -114,7 +114,7 @@ class App
             $this->appRoot = $this->config->get('appRootPath', str_replace($_SERVER['DOCUMENT_ROOT'], '', $appPath));
             $host = $_SERVER['HTTP_HOST'];
             $schema = isset($_SERVER['HTTPS']) ? 'https' : 'http';
-            $this->appBasePath = "$schema://$host$this->appRoot";
+            $this->appBase = $this->config->get('appBaseURL', "$schema://$host$this->appRoot");
         }
         $INCLUDE_PATH = get_include_path() . PATH_SEPARATOR . $this->appPath;
     
