@@ -33,7 +33,6 @@ class AppTest extends TestCase
         ->getMock();
         
         $app = $this->getMockBuilder(App::class)
-        ->disableOriginalConstructor()
         ->setMethods(['appPath', 'appBase', 'appRoot', 'config', 'scope', 'request', 'response', 'sysLog'])
         ->getMock();
         

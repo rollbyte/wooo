@@ -185,6 +185,15 @@ class Request
         $this->sess = new Session($app->config());
     }
     
+    public function forContext(App $app)
+    {
+        $result = new Request($app);
+        $result->locals = $this->locals;
+        $result->pathParams = $this->pathParams;
+        $result->sess = $this->sess;
+        return $result;
+    }
+    
     public function session(): Session
     {
         return $this->sess;

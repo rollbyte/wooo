@@ -79,33 +79,51 @@ class App
         return $this->appBase;
     }
     
-    private function acceptCArg($arg) {
+    private function acceptCArg($arg, &$configSet) {
         if (is_string($arg)) {
             $this->appPath = $arg;
         } else if (is_array($arg)) {
-            if (!$this->config) {
-                $this->config = new Config($arg);
-            } else if (!$this->scope) {
-                $this->scope = new Scope($arg, $this);
+            if (!$configSet) {
+                $this->config->merge($arg);
+                $configSet = true;
+            } else {
+                $this->scope->inject($arg);
             }
         } else if ($arg instanceof Config) {
-            $this->config = $arg;
+            $this->config->merge($arg);
         } else if ($arg instanceof Scope) {
-            $this->scope = $arg;
-            $this->scope->setApplicationContext($this);
+            $this->scope->inject($arg);
+        } else if ($arg instanceof Request) {
+            $this->req = $arg->forContext($this);
+        } else if ($arg instanceof Response) {
+            $this->res = $arg;
+        } else if ($arg instanceof App) {
+            $this->config->merge($arg->config());
+            $this->scope->inherit($arg->scope());
+            if (!$this->req) {
+                $this->req = $arg->request()->forContext($this);
+            }
+            if (!$this->res) {
+                $this->res = $arg->response();
+            }
         }
     }
   
-    public function __construct($arg0 = null, $arg1 = null, $arg2 = null)
+    public function __construct()
     {
         $this->appPath = getcwd();
         
-        $this->acceptCArg($arg0 ?? null);
-        $this->acceptCArg($arg1 ?? []);
-        $this->acceptCArg($arg2 ?? []);
+        $this->scope = new Scope($this);
+        $this->config = new Config();
+        
+        $args = func_get_args();
+        $configSet = false;
+        foreach ($args as $arg) {
+            $this->acceptCArg($arg, $configSet);
+        }
         
         $this->appRoot = '';
-        $this->appBase = $appPath;
+        $this->appBase = $this->appPath;
         
         $isWeb = false;
         
@@ -131,8 +149,12 @@ class App
         set_include_path($INCLUDE_PATH);
         $this->log = new Log();
         if ($isWeb) {
-            $this->req = new Request($this);
-            $this->res = new Response($this);
+            if (!$this->req) {
+                $this->req = new Request($this);
+            }
+            if (!$this->res) {
+                $this->res = new Response($this);
+            }
         }
     }
   
@@ -277,7 +299,6 @@ class App
             foreach ($paths as $pth) {
                 if ($this->request()->checkPath($pth)) {
                     $fits = true;
-                    $path = $pth;
                     $this->request()->parsePath($pth);
                 }
             }
@@ -297,7 +318,13 @@ class App
                 $module = include $module;
             }
             if ($module instanceof Router) {
-                $this->runRouter($path ?? '', $module);
+                if (empty($paths)) {
+                    $this->runRouter('', $module);
+                } else {
+                    foreach ($paths as $pth) {
+                        $this->runRouter($pth, $module);
+                    }
+                }
             } else {
                 if (!is_callable($module)) {
                     $this->sysLog()->error(new InternalException('Invalid middleware injected.'));

@@ -7,7 +7,7 @@ class Config
   
     private $config;
   
-    public function __construct(array $config)
+    public function __construct(array $config = [])
     {
         $this->config = $config;
     }
@@ -25,5 +25,13 @@ class Config
     public function values()
     {
         return $this->config;
+    }
+    
+    public function merge($config)
+    {
+        $conf = ($config instanceof Config) ? $config->config : $config;
+        if (is_array($conf)) {
+            $this->config = array_merge($conf, $this->config);
+        }
     }
 }

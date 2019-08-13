@@ -17,10 +17,20 @@ class Scope implements ContainerInterface
   
     private $registry = [];
   
-    public function __construct(array $di = [], ?App $app = null)
+    public function __construct()
     {
-        $this->app = $app;
-        $this->di = $di;
+        $args = func_get_args();
+        $this->di = [];
+        
+        foreach ($args as $arg) {
+            if (is_array($arg)) {
+                $this->di = array_merge($arg, $this->di);
+            } else if ($arg instanceof App) {
+                $this->app = $arg;               
+            } else if ($arg instanceof Scope) {
+                $this->di = array_merge($parent->di, $this->di);
+            }
+        }
     }
   
     private function parseValue($v, $type = null)
@@ -168,7 +178,8 @@ class Scope implements ContainerInterface
         }
         if (isset($this->di[$name])) {
             if (is_string($this->di[$name])) {
-                $component = $this->evaluate($this->parseValue($this->di[$name]));
+                $this->registry[$name] = 'loading';
+                $component = $entry->evaluate($this->parseValue($this->di[$name]));
                 $this->registry[$name] = $component;
             } else if (is_array($this->di[$name])) {
                 $cn = $this->parseValue($this->di[$name]['module']);
@@ -194,6 +205,7 @@ class Scope implements ContainerInterface
                     }
                 }
             }
+            
             return $component;
         }
         return null;
@@ -234,12 +246,24 @@ class Scope implements ContainerInterface
         $this->set($nm, $value);
     }
     
-    public function inject(array $di): Scope
+    public function inject($scope): Scope
     {
-        foreach ($di as $nm => $conf) {
-            unset($this->registry[$nm]);
+        $di = ($scope instanceof Scope) ? $scope->di : $scope;
+        if (is_array($di)) {
+            foreach ($di as $nm => $conf) {
+                unset($this->registry[$nm]);
+            }
+            $this->di = array_merge($this->di, $di);
         }
-        $this->di = array_merge_recursive($this->di, $di);
+        return $this;
+    }
+    
+    public function inherit($scope): Scope
+    {
+        $di = ($scope instanceof Scope) ? $scope->di : $scope;
+        if (is_array($di)) {
+            $this->di = array_merge($di, $this->di);
+        }
         return $this;
     }
 }
