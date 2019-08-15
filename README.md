@@ -50,7 +50,7 @@ new App(
   realpath(__DIR__),
   // configuration settings
   ['THE_PREFIX' => 'Hello, '],
-  // ioc specification
+  // IoC specification
   [
     'my\\app\\IComponent' => [
       'module' => 'my\\app\\MyComponent',

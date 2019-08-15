@@ -17,14 +17,25 @@ class Config
         return isset($this->config[$name]) ? $this->config[$name] : $default;
     }
   
-    public function set($name, $value)
+    public function set($name, $value): Config
     {
         $this->config[$name] = $value;
+        return $this;
     }
     
     public function values()
     {
         return $this->config;
+    }
+    
+    public function __get($nm)
+    {
+        return $this->config[$nm] ?? null;
+    }
+    
+    public function __set($nm, $v): void
+    {
+        $this->config[$nm] = $v;
     }
     
     public function merge($config)

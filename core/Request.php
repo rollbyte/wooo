@@ -232,7 +232,7 @@ class Request
     private function pathRegExp($pattern): string
     {
         $re = preg_replace_callback(
-            '/\/|\*{1,2}|\:[\w_]+(\([^\/]+)?/i',
+            '/\/|\:[\w_]+(\([^)]*\))?/i',
             function ($v) {
                 if ($v[0] == '/') {
                     return '\/';
