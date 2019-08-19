@@ -65,10 +65,10 @@ class ReadableStream implements IReadableStream, IPipeStarter
             throw new CoreException(CoreException::IO_OPERATION_FAILED, ['stream seek']);
         }
     }
-    public function flush(): void
+    public function flush(int $chunkSize = 1024): void
     {
         while (!$this->eof()) {
-            $data = $this->read(1024);
+            $data = $this->read($chunkSize);
             $this->emit('data', $data);
         }
         $this->emit('eof');

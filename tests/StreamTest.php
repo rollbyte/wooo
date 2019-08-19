@@ -84,9 +84,9 @@ class StreamTest extends TestCase
             ->pipe(new StrTransformer())
             ->pipe(new StrTransformer())
             ->pipe($ss)
-            ->flush();
+            ->flush(5);
         
-        $this->assertEquals('.bmal elttil a dah yraM', $ss->getContents(), 'stream piping test failed');
+        $this->assertEquals(' yraMa dahttil al el.bm', $ss->getContents(), 'stream piping test failed');
     }
     
     public function testPipeError(): void

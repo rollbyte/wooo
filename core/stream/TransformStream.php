@@ -14,6 +14,9 @@ abstract class TransformStream implements IWritableStream, IPipeUnit
     
     public function write(string $data)
     {
-        $this->emit('data', $this->transform($data));
+        $result = $this->transform($data);
+        if ($result !== null) {
+            $this->emit('data', $this->transform($data));
+        }
     }
 }

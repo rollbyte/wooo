@@ -3,5 +3,5 @@ namespace wooo\core\stream;
 
 interface IPipeStarter extends IPipeUnit
 {
-    public function flush(): void;
+    public function flush(int $chunkSize = 1024): void;
 }

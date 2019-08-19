@@ -47,12 +47,14 @@ trait PipeUnitTrait
         return (
             new class($this, $destination) implements IPipeStarter
             {
-                private $starter;
                 private $base;
+                private $flushers = [];
                     
                 public function __construct(IPipeUnit $starter, IWritableStream $base)
                 {
-                    $this->starter = $starter;
+                    if ($starter instanceof IPipeStarter) {
+                        $this->flushers[] = $starter;
+                    }
                     $this->base = $base;
                 }
                 public function pipe(IWritableStream $destination, bool $autoClose = true): IPipeStarter
@@ -61,12 +63,13 @@ trait PipeUnitTrait
                         throw new CoreException(CoreException::NOT_PIPE_UNIT, [get_class($this->base)]);
                     }
                     $this->base = $this->base->pipe($destination, $autoClose);
+                    $this->flushers[] = $this->base;
                     return $this;
                 }
-                public function flush(): void
+                public function flush(int $chunkSize = 1024): void
                 {
-                    if ($this->starter instanceof IPipeStarter) {
-                        $this->starter->flush();
+                    foreach ($this->flushers as $f) {
+                        $f->flush($chunkSize);
                     }
                 }
             }
