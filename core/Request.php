@@ -182,15 +182,14 @@ class Request
             }
         }
         
-        $this->sess = new Session($app->config());
+        $this->sess = Session::instance($app->config());
     }
     
-    public function forContext(App $app)
+    public function forContext(App $app): Request
     {
         $result = new Request($app);
         $result->locals = $this->locals;
         $result->pathParams = $this->pathParams;
-        $result->sess = $this->sess;
         return $result;
     }
     

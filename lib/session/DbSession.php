@@ -2,10 +2,9 @@
 
 namespace wooo\lib\session;
 
-use wooo\core\ISessionHandler;
 use wooo\lib\dbal\interfaces\DbDriver;
 
-class DbSession implements ISessionHandler
+class DbSession implements \SessionHandlerInterface, \SessionUpdateTimestampHandlerInterface
 {
   
     /**
@@ -14,7 +13,6 @@ class DbSession implements ISessionHandler
     private $db;
   
     /**
-     *
      * @var string
      */
     private $tableName = 'sessions';
@@ -29,12 +27,7 @@ class DbSession implements ISessionHandler
         $this->tableName = $name;
     }
   
-    /**
-     *
-     * @param string $sess_path
-     * @param string $sess_name
-     */
-    public function open($sess_path, $sess_name)
+    public function open($sessionSavePath, $sessionName)
     {
         return true;
     }
@@ -44,11 +37,6 @@ class DbSession implements ISessionHandler
         return true;
     }
   
-    /**
-     *
-     * @param  string $id
-     * @return string
-     */
     public function read($id)
     {
         $s = $this->db->get(
@@ -66,13 +54,13 @@ class DbSession implements ISessionHandler
      * @param  string $sess_data
      * @return boolean
      */
-    public function write($id, $sess_data)
+    public function write($id, $sessData)
     {
         $out = [];
         $this->db->execute(
             "update $this->tableName set data = :data where id = :id",
             [
-            'data' => $sess_data,
+            'data' => $sessData,
             'id' => $id
             ],
             $out
@@ -83,7 +71,7 @@ class DbSession implements ISessionHandler
                 [
                 'id' => $id,
                 'created' => new \DateTime(),
-                'data' => $sess_data
+                'data' => $sessData
                 ]
             );
         }
@@ -108,7 +96,14 @@ class DbSession implements ISessionHandler
     {
         $d = new \DateTime();
         $d->setTimestamp($d->getTimestamp() - $maxlifetime);
-        $this->db->execute("delete from $this->tableName where created < ?", [1 => $d]);
-        return true;
+        $out = [];
+        $this->db->execute("delete from $this->tableName where created < ?", [1 => $d], $out);
+        return $out['affected'] ?? 1;
     }
+
+    public function validateId($id)
+    {}
+
+    public function updateTimestamp($id, $sessData)
+    {}
 }

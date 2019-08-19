@@ -3,8 +3,11 @@ namespace wooo\tests;
 
 use PHPUnit\Framework\TestCase;
 use wooo\core\FileSystem;
-use wooo\core\Stream;
-use wooo\core\IStream;
+use wooo\core\stream\ReadableStream;
+use wooo\core\stream\IReadableStream;
+use wooo\tests\util\StrTransformer;
+use wooo\tests\util\StrSaver;
+use wooo\core\exceptions\CoreException;
 
 class StreamTest extends TestCase
 {   
@@ -22,7 +25,7 @@ class StreamTest extends TestCase
     public function testSize(): void
     {
         $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
-        $s = new Stream($fd);
+        $s = new ReadableStream($fd);
         $this->assertEquals(23, $s->size(), 'stream size test failed');
         $s->close();
     }
@@ -30,7 +33,7 @@ class StreamTest extends TestCase
     public function testRead(): void
     {
         $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
-        $s = new Stream($fd);
+        $s = new ReadableStream($fd);
 
         $result = '';
         while (!$s->eof()) {
@@ -44,12 +47,12 @@ class StreamTest extends TestCase
     public function testSeek(): void
     {
         $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
-        $s = new Stream($fd);
+        $s = new ReadableStream($fd);
         $s->seek(5);
         $result = $s->read(3);
         $this->assertEquals('had', $result, 'stream reading test failed');
         $result = '';
-        $s->seek(3, IStream::SEEK_REL);
+        $s->seek(3, IReadableStream::SEEK_REL);
         while (!$s->eof()) {
             $chunk = $s->read(6);
             $result .= $chunk;
@@ -61,7 +64,7 @@ class StreamTest extends TestCase
     public function testRewind(): void
     {
         $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
-        $s = new Stream($fd);
+        $s = new ReadableStream($fd);
         $s->seek(22);
         $s->read(5);
         $this->assertTrue($s->eof(), 'stream eof test failed');
@@ -69,5 +72,33 @@ class StreamTest extends TestCase
         $chunk = $s->read(4);
         $this->assertEquals('Mary', $chunk, 'stream rewind test failed');
         $s->close();
+    }
+    
+    public function testPipe(): void
+    {
+        $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
+        $s = new ReadableStream($fd);
+        $ss = new StrSaver();
+        $s
+            ->pipe(new StrTransformer())
+            ->pipe(new StrTransformer())
+            ->pipe(new StrTransformer())
+            ->pipe($ss)
+            ->flush();
+        
+        $this->assertEquals('.bmal elttil a dah yraM', $ss->getContents(), 'stream piping test failed');
+    }
+    
+    public function testPipeError(): void
+    {
+        $fd = fopen(FileSystem::path([__DIR__, 'tmp6', 'Mary.info']), 'r');
+        $s = new ReadableStream($fd);
+        $ss = new StrSaver();
+        $this->expectExceptionCode(CoreException::NOT_PIPE_UNIT);
+        $s
+        ->pipe(new StrTransformer())
+        ->pipe($ss)
+        ->pipe(new StrTransformer())
+        ->flush();
     }
 }

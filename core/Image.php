@@ -3,6 +3,7 @@
 namespace wooo\core;
 
 use wooo\core\exceptions\CoreException;
+use wooo\core\stream\IReadableStream;
 
 class Image implements IImage
 {
@@ -136,7 +137,7 @@ class Image implements IImage
         return $this->base->getContents();
     }
   
-    public function getStream(): IStream
+    public function getStream(): IReadableStream
     {
         return $this->base->getStream();
     }

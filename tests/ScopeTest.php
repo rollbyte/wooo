@@ -7,6 +7,7 @@ use wooo\core\Scope;
 use wooo\core\App;
 use wooo\tests\util\ComponentMock;
 use wooo\tests\util\ComponentMock3;
+use wooo\tests\util\ComponentMock2;
 
 class ScopeTest extends TestCase
 {
@@ -32,34 +33,34 @@ class ScopeTest extends TestCase
             
         $scope = new Scope([
             'com1' => [
-                'module' => 'wooo\tests\util\${ComponentMock}',
+                'class' => 'wooo\tests\util\${ComponentMock}',
                 'args' => ['${value1}'],
             ],
             'com2' => [
-                'module' => 'wooo\tests\util\ComponentMock',
+                'class' => 'wooo\tests\util\ComponentMock',
                 'args' => ['value2', '${com1}'],
                 'options' => [
                     'prefix' => 'bar'
                 ]
             ],
             'com3' => [
-                'module' => 'wooo\tests\util\ComponentMock',
+                'class' => 'wooo\tests\util\ComponentMock',
                 'args' => ['value3', 'com1'],
                 'options' => [
                     'dependency2' => '${com2}'
                 ]
             ],
             'com4' => [
-                'module' => 'wooo\tests\util\ComponentMock2'
+                'class' => 'wooo\tests\util\ComponentMock2'
             ]
         ], $app);
+        
         $this->assertInstanceOf(Scope::class, $scope, 'scope initialization test failed');
         $this->assertInstanceOf(ComponentMock::class, $scope->com1, 'scope component initialization test failed');
         $this->assertInstanceOf(ComponentMock::class, $scope->com2, 'scope component initialization test failed');
         $this->assertInstanceOf(ComponentMock::class, $scope->com3, 'scope component initialization test failed');
         
         $app->method('scope')->will($this->returnValue($scope));
-        
         return $scope;
     }
     
@@ -84,23 +85,23 @@ class ScopeTest extends TestCase
     public function testInject(Scope $scope): void
     {
         $scope->dynamic = function (App $app) {
-          return new ComponentMock3($app->com4);  
+            return new ComponentMock3($app->com4);  
         };
         
         $this->assertInstanceOf(ComponentMock3::class, $scope->dynamic, 'dynamic component loading test failed');
+        $this->assertNotSame($scope->dynamic, $scope->dynamic, 'dynamic non equality test failed'); 
         $scope->inject([
-            'wooo\tests\util\ComponentMock2' => [
-                'module' => 'wooo\tests\util\ComponentMock2'
-            ],
+            'wooo\tests\util\ComponentMock2' => [],
             'byClassInjection' => [
-                'module' => 'wooo\tests\util\ComponentMock3'
+                'class' => 'wooo\tests\util\ComponentMock3'
             ],
             'nonSingle' => [
-                'module' => 'wooo\tests\util\ComponentMock3',
-                'singleton' => false
+                'class' => 'wooo\tests\util\ComponentMock3',
+                'produce' => true
             ]
         ]);
+        $this->assertInstanceOf(ComponentMock2::class, $scope->get(ComponentMock2::class), 'injection by class test failed');
         $this->assertInstanceOf(ComponentMock3::class, $scope->byClassInjection, 'injection by class test failed');
-        $this->assertNotEquals($scope->nonSingle, $scope->nonSingle, 'non singleton injection test failed');
+        $this->assertNotSame($scope->nonSingle, $scope->nonSingle, 'non singleton injection test failed');
     }
 }

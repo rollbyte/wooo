@@ -2,6 +2,8 @@
 
 namespace wooo\core;
 
+use wooo\core\stream\IReadableStream;
+
 interface IFile
 {
   
@@ -29,7 +31,7 @@ interface IFile
      */
     public function getContents(): string;
   
-    public function getStream(): IStream;
+    public function getStream(): IReadableStream;
   
     /**
      *

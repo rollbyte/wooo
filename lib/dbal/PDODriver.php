@@ -145,9 +145,9 @@ class PDODriver implements wooo\DbDriver
         try {
             $stmt->execute();
             if (is_array($output)) {
-                $output["affected"] = $stmt->rowCount();
+                $output['affected'] = $stmt->rowCount();
                 if (preg_match('/^\\s*insert\\s.*$/m', $q)) {
-                    $output["rowid"] = $this->connection->lastInsertId();
+                    $output['rowid'] = $this->connection->lastInsertId();
                 }
             }
             return $this;

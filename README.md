@@ -53,7 +53,7 @@ new App(
   // IoC specification
   [
     'my\\app\\IComponent' => [
-      'module' => 'my\\app\\MyComponent',
+      'class' => 'my\\app\\MyComponent',
       // injection of configuration into constructor argument
       'args' => ['${THE_PREFIX}']
     ]
@@ -75,7 +75,7 @@ use my\app\IComponent;
       ['THE_PREFIX' => 'Hello, '],
       [
         'my\\app\\IComponent' => [
-          'module' => 'my\\app\\MyComponent',
+          'class' => 'my\\app\\MyComponent',
           'args' => ['${THE_PREFIX}']
         ]
       ]

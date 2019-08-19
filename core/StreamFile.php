@@ -3,6 +3,8 @@
 namespace wooo\core;
 
 use wooo\core\exceptions\CoreException;
+use wooo\core\stream\IReadableStream;
+use wooo\core\stream\ReadableStream;
 
 class StreamFile implements IFile
 {
@@ -93,9 +95,9 @@ class StreamFile implements IFile
         return $s;
     }
   
-    public function getStream(): IStream
+    public function getStream(): IReadableStream
     {
-        $s = new Stream($this->openStream());
+        $s = new ReadableStream($this->openStream());
         $this->size = $s->size();
         return $s;
     }

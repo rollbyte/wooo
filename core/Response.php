@@ -2,6 +2,8 @@
 
 namespace wooo\core;
 
+use wooo\core\stream\IReadableStream;
+
 class Response
 {
     private $variables = [];
@@ -22,10 +24,15 @@ class Response
         return $this;
     }
     
-    public function set($nm, $value): Response
+    public function set(string $nm, $value): Response
     {
         $this->variables[$nm] = $value;
         return $this;
+    }
+    
+    public function __set(string $nm, $value): void
+    {
+        $this->set($nm, $value);
     }
   
     public function redirect($url)
@@ -68,9 +75,9 @@ class Response
             fclose($data);
         } elseif (is_string($data)) {
             echo $data;
-        } elseif ($data instanceof IStream) {
+        } elseif ($data instanceof IReadableStream) {
             while (!$data->eof()) {
-                echo $data->read();
+                echo $data->read(1024);
             }
             $data->close();
         } elseif (is_array($data) || is_object($data)) {
@@ -86,7 +93,7 @@ class Response
         return $this;
     }
   
-    public function setCookie($name, $value, $expire = null, $path = null, $http_only = false): Response
+    public function setCookie(string $name, $value, ?int $expire = null, ?string $path = null, ?bool $http_only = false): Response
     {
         if (is_null($value)) {
             $expire = time() - 86400;

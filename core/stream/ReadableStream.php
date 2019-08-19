@@ -1,16 +1,21 @@
 <?php
-
-namespace wooo\core;
+namespace wooo\core\stream;
 
 use wooo\core\exceptions\CoreException;
 
-class Stream implements IStream
+class ReadableStream implements IReadableStream, IPipeStarter
 {
+    use PipeUnitTrait;
+    
     private $resource;
     
     public function __construct($res)
     {
         if (!is_resource($res)) {
+            throw new CoreException(CoreException::IO_OPERATION_FAILED);
+        }
+        $meta = stream_get_meta_data($res);
+        if (strpbrk($meta['mode'], 'r+') === false) {
             throw new CoreException(CoreException::IO_OPERATION_FAILED);
         }
         $this->resource = $res;
@@ -40,6 +45,7 @@ class Stream implements IStream
     public function close(): void
     {
         fclose($this->resource);
+        $this->emit('close');
     }
     
     public function size(): int
@@ -58,5 +64,14 @@ class Stream implements IStream
         if (fseek($this->resource, $pos, $whence) !== 0) {
             throw new CoreException(CoreException::IO_OPERATION_FAILED, ['stream seek']);
         }
+    }
+    public function flush(): void
+    {
+        while (!$this->eof()) {
+            $data = $this->read(1024);
+            $this->emit('data', $data);
+        }
+        $this->emit('eof');
+        $this->close();
     }
 }

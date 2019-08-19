@@ -36,7 +36,7 @@ class OAuthPassportTest extends TestCase
         ->getMock();
         
         $session->method('get')->will($this->returnCallback(function ($nm) {return self::$__SESSION[$nm];}));
-        $session->method('set')->will($this->returnCallback(function ($nm, $v) {self::$__SESSION[$nm] = $v;}));
+        $session->method('set')->will($this->returnCallback(function ($nm, $v) use ($session) {self::$__SESSION[$nm] = $v;return $session;}));
         
         $session->set('oauth2state_1', 'valid');
         

@@ -16,6 +16,24 @@ class Scope implements ContainerInterface
     private $di;
   
     private $registry = [];
+    
+    private $aliases = [];
+    
+    private function setAliases(): void
+    {
+        $this->aliases = [];
+        foreach ($this->di as $nm => $value) {
+            if (is_array($value) && isset($value['class'])) {
+                $cn = $this->parseValue($value['class']);
+                if ($nm != $cn &&
+                    !isset($this->aliases[$cn]) &&
+                    !isset($this->di[$cn])
+                ) {
+                    $this->aliases[$cn] = $nm;
+                }
+            }
+        }
+    }
   
     public function __construct()
     {
@@ -31,6 +49,8 @@ class Scope implements ContainerInterface
                 $this->di = array_merge($parent->di, $this->di);
             }
         }
+        
+        $this->setAliases();
     }
   
     private function parseValue($v, $type = null)
@@ -75,7 +95,7 @@ class Scope implements ContainerInterface
         return key($arr) === 0;
     }
   
-    private function parseArgs(\ReflectionFunctionAbstract $f, array $args = [])
+    private function parseArgs(\ReflectionFunctionAbstract $f, array $args, array $passed = [])
     {
         $result = [];
         $params = $f->getParameters();
@@ -113,7 +133,22 @@ class Scope implements ContainerInterface
                         if ($tmp && ($tmp instanceof $className)) {
                             $j++;
                         } elseif ($pv !== $className) {
-                            $tmp = $this->evaluate($className);
+                           if (isset($this->aliases[$className])) {
+                                try {
+                                    $tmp = $this->evaluate($className);
+                                } catch (ScopeException $e) {
+                                    if (!($param->allowsNull() || $param->isOptional())) {
+                                        throw $e;
+                                    }
+                                }
+                            } else if (!($param->allowsNull() || $param->isOptional())) {
+                                if (isset($passed[$className])) {
+                                    throw new ScopeException(ScopeException::CIRCULAR_DEPENDENCY);
+                                }
+                                $c = new \ReflectionClass($className);
+                                $passed[$className] = true;
+                                $tmp = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), [], $passed));
+                            }
                         }
                     }
                     
@@ -170,6 +205,10 @@ class Scope implements ContainerInterface
     {
         if (isset($this->registry[$name])) {
             $v = $this->registry[$name];
+            if ($v === "loading") {
+                throw new ScopeException(ScopeException::CIRCULAR_DEPENDENCY);
+            }
+            
             if (is_callable($v)) {
                 $rf = new \ReflectionFunction($v);
                 return $rf->invokeArgs($this->parseArgs($rf, []));
@@ -182,31 +221,43 @@ class Scope implements ContainerInterface
                 $component = $entry->evaluate($this->parseValue($this->di[$name]));
                 $this->registry[$name] = $component;
             } else if (is_array($this->di[$name])) {
-                $cn = $this->parseValue($this->di[$name]['module']);
-                $this->registry[$name] = 'loading';
-                $c = new \ReflectionClass($cn);
-                $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $this->di[$name]['args'] ?? []));
-                if (!isset($this->di[$name]['singleton']) || $this->di[$name]['singleton'] == true) {
-                    $this->registry[$name] = $component;
-                }
-                if (isset($this->di[$name]["options"])) {
-                    try {
+                try {
+                    $cn = $this->parseValue($this->di[$name]['class'] ?? $name);
+                    $c = new \ReflectionClass($cn);
+                    if (!$c->isInstantiable()) {
+                        throw new \Exception("Class $cn is not instantiable.");
+                    }
+                    $this->registry[$name] = 'loading';
+                    $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $this->di[$name]['args'] ?? []));
+                
+                    if (!isset($this->di[$name]['produce']) || ($this->di[$name]['produce'] !== true)) {
+                        $this->registry[$name] = $component;
+                        if ($name != $cn) {
+                            $this->registry[$cn] = $component;
+                        }
+                    } else {
+                        unset($this->registry[$name]);
+                    }
+                    if (isset($this->di[$name]["options"])) {
                         $opts = $this->parseOptions($c, $this->di[$name]["options"]);
-                    } catch (\Exception $e) {
-                        throw new ScopeException(ScopeException::COMPONENT_FAILED, [$name], $e);
-                    }
-                    foreach ($opts as $m => $v) {
-                        if (!is_array($v)) {
-                            $v = [$v];
-                        }
-                        foreach ($v as $v1) {
-                            $c->getMethod($m)->invoke($component, $v1);
+                        foreach ($opts as $m => $v) {
+                            if (!is_array($v)) {
+                                $v = [$v];
+                            }
+                            foreach ($v as $v1) {
+                                $c->getMethod($m)->invoke($component, $v1);
+                            }
                         }
                     }
+                } catch (\Exception $e) {
+                    unset($this->registry[$name]);
+                    throw new ScopeException(ScopeException::COMPONENT_FAILED, [$name], $e);
                 }
             }
             
             return $component;
+        } else if (isset($this->aliases[$name])) {
+            return $this->evaluate($this->aliases[$name]);
         }
         return null;
     }
@@ -227,43 +278,51 @@ class Scope implements ContainerInterface
     
     public function has($nm): bool
     {
-        return isset($this->registry[$nm]) || isset($this->di[$nm]);
+        return isset($this->registry[$nm]) || isset($this->di[$nm]) || isset($this->aliases[$nm]);
     }
   
-    public function __get($nm)
+    public function __get(string $nm)
     {
         return $this->get($nm);
     }
     
-    public function set($nm, $value): Scope
+    public function set(string $nm, $value): Scope
     {
         $this->registry[$nm] = $value;
         return $this;
     }
     
-    public function __set($nm, $value): void
+    public function __set(string $nm, $value): void
     {
         $this->set($nm, $value);
     }
     
-    public function inject($scope): Scope
+    public function inject(): Scope
     {
-        $di = ($scope instanceof Scope) ? $scope->di : $scope;
-        if (is_array($di)) {
-            foreach ($di as $nm => $conf) {
-                unset($this->registry[$nm]);
+        $scopes = func_get_args();
+        foreach ($scopes as $scope) {
+            $di = ($scope instanceof Scope) ? $scope->di : $scope;
+            if (is_array($di)) {
+                foreach ($di as $nm => $conf) {
+                    unset($this->registry[$nm]);
+                }
+                $this->di = array_merge($this->di, $di);
             }
-            $this->di = array_merge($this->di, $di);
         }
+        $this->setAliases();
         return $this;
     }
     
-    public function inherit($scope): Scope
+    public function inherit(): Scope
     {
-        $di = ($scope instanceof Scope) ? $scope->di : $scope;
-        if (is_array($di)) {
-            $this->di = array_merge($di, $this->di);
+        $scopes = func_get_args();
+        foreach ($scopes as $scope) {
+            $di = ($scope instanceof Scope) ? $scope->di : $scope;
+            if (is_array($di)) {
+                $this->di = array_merge($di, $this->di);
+            }
         }
+        $this->setAliases();
         return $this;
     }
 }

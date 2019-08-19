@@ -3,6 +3,8 @@
 namespace wooo\core;
 
 use wooo\core\exceptions\CoreException;
+use wooo\core\stream\IReadableStream;
+use wooo\core\stream\ReadableStream;
 
 class LocalFile implements ILocalFile
 {
@@ -81,9 +83,9 @@ class LocalFile implements ILocalFile
         return $r;
     }
   
-    public function getStream(): IStream
+    public function getStream(): IReadableStream
     {
-        $s = new Stream(fopen($this->path, 'r'));
+        $s = new ReadableStream(fopen($this->path, 'r'));
         $this->size = $s->size();
         return $s;
     }

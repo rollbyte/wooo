@@ -11,20 +11,34 @@ class Session
     private $domain = null;
   
     private $handler;
+    
+    private static $instance;
   
-    public function override(ISessionHandler $handler)
+    public function override(\SessionHandlerInterface $handler): Session
     {
         $this->handler = $handler;
+        return $this;
     }
   
-    public function __construct(Config $config)
+    private function __construct(?Config $config = null)
     {
-        $this->name = $config->get('SESSION_NAME', 'wooo');
+        $this->name = $config ? $config->get('SESSION_NAME', 'wooo') : 'wooo';
     }
     
-    public function setDomain($domain): void
+    public static function instance(?Config $config = null)
+    {
+        if (!self::$instance) {
+            self::$instance = new Session($config);
+        } else {
+            self::$instance->name = $config ? $config->get('SESSION_NAME', 'wooo') : 'wooo';
+        }
+        self::$instance;
+    }
+    
+    public function setDomain($domain): Session
     {
         $this->domain = $domain;
+        return $this;
     }
   
     private function open()
@@ -35,57 +49,40 @@ class Session
                 ini_set('session.cookie_domain', $this->domain);
             }
             if ($this->handler) {
-                session_set_save_handler(
-                    array(
-                    $this->handler,
-                    "open"
-                    ),
-                    array(
-                    $this->handler,
-                    "close"
-                    ),
-                    array(
-                    $this->handler,
-                    "read"
-                    ),
-                    array(
-                    $this->handler,
-                    "write"
-                    ),
-                    array(
-                    $this->handler,
-                    "destroy"
-                    ),
-                    array(
-                    $this->handler,
-                    "gc"
-                    )
-                );
+                session_set_save_handler($this->handler, true);
             }
             session_start();
             $this->isOpen = true;
         }
     }
   
-    public function get($name, $default = null)
+    public function get(string $name, $default = null)
     {
         $this->open();
         return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
     }
   
-    public function set($name, $value)
+    public function set(string $name, $value): Session
     {
         $this->open();
         $_SESSION[$name] = $value;
+        return $this;
     }
   
-    public function reset()
+    public function reset(): string
     {
         $this->open();
         return session_regenerate_id(true);
     }
+    
+    public function close(): Session
+    {
+        session_write_close();
+        $this->isOpen = false;
+        return $this;
+    }
   
-    public function id()
+    public function id(): string
     {
         return $this->isOpen ? session_id() : null;
     }
