@@ -12,11 +12,13 @@ abstract class TransformStream implements IWritableStream, IPipeUnit
 
     protected abstract function transform($data);
     
-    public function write(string $data)
+    public function write(string $data): int
     {
         $result = $this->transform($data);
         if ($result !== null) {
-            $this->emit('data', $this->transform($data));
+            $this->emit('data', $result);
+            return strlen($result);
         }
+        return 0;
     }
 }

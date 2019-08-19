@@ -7,9 +7,10 @@ class StrSaver implements IWritableStream
 {
     private $buffer = '';
     
-    public function write(string $data)
+    public function write(string $data): int
     {
         $this->buffer .= $data;
+        return strlen($data);
     }
 
     public function close(): void

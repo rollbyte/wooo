@@ -72,6 +72,5 @@ class ReadableStream implements IReadableStream, IPipeStarter
             $this->emit('data', $data);
         }
         $this->emit('eof');
-        $this->close();
     }
 }
