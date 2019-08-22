@@ -25,6 +25,6 @@ class HashTest extends TestCase
     public function testHashInvalidAlgo(): void
     {
         $this->expectExceptionCode(CoreException::INVALID_HASH_ALGO);
-        $h = new Hash('foo');
+        new Hash('foo');
     }
 }

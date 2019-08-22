@@ -28,7 +28,7 @@ class ImageTest extends TestCase
     public function testConvert(): void
     {
         $img = new Image(new LocalFile(FileSystem::path([__DIR__, 'tmp2', 'Mary.jpeg'])));
-        $f = $img->convert(IMAGETYPE_PNG, 50, 50, false, FileSystem::path([__DIR__, 'tmp2', 'Mary.png']));
+        $img->convert(IMAGETYPE_PNG, 50, 50, false, FileSystem::path([__DIR__, 'tmp2', 'Mary.png']));
         $this->assertFileExists(FileSystem::path([__DIR__, 'tmp2', 'Mary.jpeg']));
     }
 }

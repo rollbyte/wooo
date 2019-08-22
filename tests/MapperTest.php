@@ -82,7 +82,7 @@ class MapperTest extends TestCase
         $this->assertEquals(156, $result->IntAttr, 'int attr assignment test failed');
         $this->assertInstanceOf(ClassD::class, $result->Dref, 'ref attr assignment test failed');
         
-        $b2 = self::$mapper->create(
+        self::$mapper->create(
             ClassB::class,
             [
                 'Dref' => $dref,
@@ -99,7 +99,7 @@ class MapperTest extends TestCase
         );
 
         $d->setDate(2019, 11, 12);
-        $a1 = self::$mapper->create(
+        self::$mapper->create(
             ClassA::class,
             [
                 'Dref' => $dref,
@@ -112,10 +112,10 @@ class MapperTest extends TestCase
             ]
         ); 
         
-        $c1 = self::$mapper->create(ClassC::class, ['Code' => 'code1', 'Name' => 'C # 1', 'Dref' => 'code2', 'Aref' => '00002']);
-        $c2 = self::$mapper->create(ClassC::class, ['Code' => 'code2', 'Name' => 'C # 2', 'Dref' => 'code2', 'Aref' => '00002']);
-        $e1 = self::$mapper->create(ClassE::class, ['Dref' => 'code2', 'Master' => '00002', 'Detail' => '00001']);
-        $e2 = self::$mapper->create(ClassE::class, ['Dref' => 'code2', 'Master' => '00002', 'Detail' => '00003']);
+        self::$mapper->create(ClassC::class, ['Code' => 'code1', 'Name' => 'C # 1', 'Dref' => 'code2', 'Aref' => '00002']);
+        self::$mapper->create(ClassC::class, ['Code' => 'code2', 'Name' => 'C # 2', 'Dref' => 'code2', 'Aref' => '00002']);
+        self::$mapper->create(ClassE::class, ['Dref' => 'code2', 'Master' => '00002', 'Detail' => '00001']);
+        self::$mapper->create(ClassE::class, ['Dref' => 'code2', 'Master' => '00002', 'Detail' => '00003']);
     }
     
     /**
@@ -220,7 +220,9 @@ class MapperTest extends TestCase
         $iterated = false;
         
         foreach ($result as $obj) {
-            $iterated = true;
+            if ($obj) {
+                $iterated = true;
+            }
         }
         
         $this->assertTrue($iterated, 'iteration test failed');

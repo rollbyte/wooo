@@ -30,7 +30,7 @@ class PDOCursor implements DbCursor
     
     public function key()
     {
-        return $counter;
+        return $this->counter;
     }
     
     public function next()

@@ -46,7 +46,7 @@ class Image implements IImage
             
         $data = $this->getContents();
     
-        list($orig_width, $orig_height, $orig_type, $attr) = getimagesizefromstring($data);
+        list($orig_width, $orig_height) = getimagesizefromstring($data);
     
         $s_width = $width ? $width : $orig_width;
         $s_height = $height ? $height : $orig_height;

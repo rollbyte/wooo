@@ -51,8 +51,6 @@ class AppTest extends TestCase
             }
         }));
         
-        $__SESSION = [];
-        
         $session = $this->getMockBuilder(Session::class)
         ->disableOriginalConstructor()
         ->setMethods(['get', 'set', 'reset', 'id'])

@@ -323,7 +323,8 @@ class Scope implements ContainerInterface
         foreach ($scopes as $scope) {
             $di = ($scope instanceof Scope) ? $scope->di : $scope;
             if (is_array($di)) {
-                foreach ($di as $nm => $conf) {
+                $names = array_keys($di);
+                foreach ($names as $nm) {
                     unset($this->registry[$nm]);
                 }
                 $this->di = array_merge($this->di, $di);

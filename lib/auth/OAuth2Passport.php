@@ -133,7 +133,7 @@ abstract class OAuth2Passport implements IPassport
             $data = [];
             $data['email'] = $profile['email'];
             $data['login'] = $profile['login'] ?? $profile['email'];
-            $uid = $this->db->execute(
+            $this->db->execute(
                 "insert into $this->tableName (email, login, active) values (:email, :login, 1)",
                 $data
             );

@@ -191,6 +191,7 @@ class Mapper
             $doc = $rc->getDocComment();
             if ($doc) {
                 $lineend = '.*$/m';
+                $matches = null;
                 preg_match_all('/@orm.table\s+([_\w]+)' . $lineend, $doc, $matches);
                 $n = count($matches[1]);
                 if ($n > 0) {
@@ -481,7 +482,7 @@ class Mapper
             $drill = substr($attr, $dotpos + 1);
         }
         $porm = $this->propOrm($orm, $a);
-        $this->processAncestors($context, $porm, 'filter', $jointype ? $jointype : 'inner', $aliases, $joins, $counter);
+        $this->processAncestors($context, $porm, 'filter', $jointype ? $jointype : 'inner', $aliases, $joins, $count);
         $alias = $aliases[$context . '::' . $porm['tn']]['alias'];
     
         $prop = $this->propMeta($porm, $a);
@@ -531,7 +532,7 @@ class Mapper
     
         if ($prop['is_ref']) {
             if (!$prop['is_array']) {
-                $this->processAncestors($context, $porm, 'eager', 'left', $aliases, $joins, $counter);
+                $this->processAncestors($context, $porm, 'eager', 'left', $aliases, $joins, $count);
                 $alias = $aliases[$context . '::' . $porm['tn']]['alias'];
                 $rorm = $this->getOrmParams($prop['type'], $descendants);
                 $eagerPref = $prefix . '_' . $prop['index'];
@@ -844,18 +845,25 @@ class Mapper
         return join(', ', $result);
     }
   
-    private function buildSelect($cn, $options = [], $quantaty = false, $conditions = false)
+    private function buildSelect(string $cn, array $options = [], $quantaty = false, $conditions = false)
     {
-        extract($options);
+        $descendants = null;
+        $fetch = null;
+        $eager = null;
+        $filter = null;
+        $sort = null;
+        $offset = null;
+        $count = null;
+        extract($options, EXTR_IF_EXISTS);
     
-        $orm = $this->getOrmParams($cn, isset($descendants) ? $descendants : []);
+        $orm = $this->getOrmParams($cn, is_array($descendants) ? $descendants : []);
     
         $groupBy = [];
         
         if ($quantaty) {
             $q = 'select count(*) as cnt';
         } else {
-            if (isset($fetch)) {
+            if (is_array($fetch)) {
                 $q = 'select ' . $this->parseFetch($orm, $fetch, $groupBy);
             } else {
                 $q = 'select distinct main.*';
@@ -874,7 +882,7 @@ class Mapper
     
         $this->processAncestors('main', $orm, 'base', 'inner', $aliases, $joins, $counter);
     
-        if (isset($eager) && is_array($eager) && !empty($eager)) {
+        if (is_array($eager) && !empty($eager)) {
             $this->parseEager(
                 '',
                 'main',
@@ -887,12 +895,12 @@ class Mapper
             );
         }
     
-        if (isset($filter) && is_array($filter) && !empty($filter)) {
+        if (is_array($filter) && !empty($filter)) {
             $where = $this->parseFilter('main', $orm, $filter, $aliases, $joins, $counter);
         }
     
         $sorts = [];
-        if (isset($sort) && !$quantaty) {
+        if (is_array($sort) && !$quantaty) {
             foreach ($sort as $s) {
                 if (isset($s['expr'])) {
                     $expr = $s['expr'];
@@ -913,7 +921,7 @@ class Mapper
         $this->processDescendants('main', $orm, $aliases, $joins, $counter);
     
         if (!$quantaty && (!isset($fetch) || empty($fetch))) {
-            foreach ($aliases as $tn => $alias) {
+            foreach ($aliases as $alias) {
                 if (isset($alias['type'])) {
                     switch ($alias['type']) {
                         case 'base':
@@ -1112,7 +1120,6 @@ class Mapper
     private function update($orm, $id, $data, $with_descs = false)
     {
         $key_data = [];
-        $key = $orm['key'];
         $tn = $orm['tn'];
         $count = 0;
         if (isset($orm['parent'])) {
@@ -1180,8 +1187,6 @@ class Mapper
   
     private function del($orm, $id, $with_descs = false)
     {
-        $cn = $orm['cn'];
-        $key = $orm['key'];
         $tn = $orm['tn'];
         $count = 0;
         if (isset($orm['parent'])) {
@@ -1289,7 +1294,7 @@ class Mapper
                     $j = $j + $n2 - $n3;
                     $ref_id_kv = $this->idToKeyData($propmeta['type'], $ref_id);
                     $v = [];
-                    foreach ($ref_id_kv as $k => $v1) {
+                    foreach ($ref_id_kv as $v1) {
                         if (is_array($v1)) {
                             $v = $v + $v1;
                         } else {
@@ -1520,7 +1525,8 @@ class Mapper
                 return null;
             }
             $idData = $this->idToKeyData($cn, $id);
-            foreach ($idData as $prop => $v) {
+            $idKeys = array_keys($idData);
+            foreach ($idKeys as $prop) {
                 if (isset($data[$prop])) {
                     $idData[$prop] = $data[$prop];
                 }
@@ -1814,7 +1820,6 @@ class Mapper
      */
     public function aggregate($cn, array $options = [], array $params = [])
     {
-        $result = [];
         unset($options['eager']);
         $q = $this->buildSelect($cn, $options);
         try {
@@ -1833,7 +1838,6 @@ class Mapper
      */
     public function count($cn, array $options = [], array $params = [])
     {
-        $result = [];
         return intval($this->ds->scalar($this->buildSelect($cn, $options, true), $this->processParams($params)));
     }
   
@@ -1927,7 +1931,7 @@ class Mapper
                 if (!$cur) {
                     return $cur;
                 }
-                $result = ($this->wrapper)($this->cursor->current());
+                return ($this->wrapper)($cur);
             }
             
             public function key()
