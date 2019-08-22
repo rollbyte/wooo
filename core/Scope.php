@@ -44,9 +44,9 @@ class Scope implements ContainerInterface
             if (is_array($arg)) {
                 $this->di = array_merge($arg, $this->di);
             } else if ($arg instanceof App) {
-                $this->app = $arg;               
+                $this->app = $arg;          
             } else if ($arg instanceof Scope) {
-                $this->di = array_merge($parent->di, $this->di);
+                $this->di = array_merge($arg->di, $this->di);
             }
         }
         
@@ -200,6 +200,42 @@ class Scope implements ContainerInterface
         }
         return $result;
     }
+    
+    private function instantiate(string $cn, ?string $name = null, array $args = [], ?array $options = null)
+    {
+        $c = new \ReflectionClass($cn);
+        if (!$c->isInstantiable()) {
+            throw new \Exception("Class $cn is not instantiable.");
+        }
+        if ($name) {
+            $this->registry[$name] = 'loading';
+        }
+        $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $args));
+        
+        if ($name) {
+            if (!isset($this->di[$name]['produce']) || ($this->di[$name]['produce'] !== true)) {
+                $this->registry[$name] = $component;
+                if ($name != $cn) {
+                    $this->registry[$cn] = $component;
+                }
+            } else {
+                unset($this->registry[$name]);
+            }
+        }
+        
+        if (is_array($options)) {
+            $opts = $this->parseOptions($c, $options);
+            foreach ($opts as $m => $v) {
+                if (!is_array($v)) {
+                    $v = [$v];
+                }
+                foreach ($v as $v1) {
+                    $c->getMethod($m)->invoke($component, $v1);
+                }
+            }
+        }
+        return $component;
+    }
   
     private function evaluate($name)
     {
@@ -218,37 +254,16 @@ class Scope implements ContainerInterface
         if (isset($this->di[$name])) {
             if (is_string($this->di[$name])) {
                 $this->registry[$name] = 'loading';
-                $component = $entry->evaluate($this->parseValue($this->di[$name]));
+                $component = $this->evaluate($this->parseValue($this->di[$name]));
                 $this->registry[$name] = $component;
             } else if (is_array($this->di[$name])) {
                 try {
-                    $cn = $this->parseValue($this->di[$name]['class'] ?? $name);
-                    $c = new \ReflectionClass($cn);
-                    if (!$c->isInstantiable()) {
-                        throw new \Exception("Class $cn is not instantiable.");
-                    }
-                    $this->registry[$name] = 'loading';
-                    $component = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), $this->di[$name]['args'] ?? []));
-                
-                    if (!isset($this->di[$name]['produce']) || ($this->di[$name]['produce'] !== true)) {
-                        $this->registry[$name] = $component;
-                        if ($name != $cn) {
-                            $this->registry[$cn] = $component;
-                        }
-                    } else {
-                        unset($this->registry[$name]);
-                    }
-                    if (isset($this->di[$name]["options"])) {
-                        $opts = $this->parseOptions($c, $this->di[$name]["options"]);
-                        foreach ($opts as $m => $v) {
-                            if (!is_array($v)) {
-                                $v = [$v];
-                            }
-                            foreach ($v as $v1) {
-                                $c->getMethod($m)->invoke($component, $v1);
-                            }
-                        }
-                    }
+                    $component = $this->instantiate(
+                        $this->parseValue($this->di[$name]['class'] ?? $name),
+                        $name,
+                        $this->di[$name]['args'] ?? [],
+                        $this->di[$name]["options"] ?? null
+                    );
                 } catch (\Exception $e) {
                     unset($this->registry[$name]);
                     throw new ScopeException(ScopeException::COMPONENT_FAILED, [$name], $e);
@@ -295,6 +310,11 @@ class Scope implements ContainerInterface
     public function __set(string $nm, $value): void
     {
         $this->set($nm, $value);
+    }
+    
+    public function new(string $class, array $args = [], ?array $options = null)
+    {
+        return $this->instantiate($class, null, $args, $options);        
     }
     
     public function inject(): Scope

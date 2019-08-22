@@ -129,7 +129,7 @@ class App
         
         if (isset($_SERVER['HTTP_HOST'])) {
             $isWeb = true;
-            $this->appRoot = $this->config->get('appRootPath', str_replace($_SERVER['DOCUMENT_ROOT'], '', $appPath));
+            $this->appRoot = $this->config->get('appRootPath', str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->appPath));
             $host = $_SERVER['HTTP_HOST'];
             $schema = isset($_SERVER['HTTPS']) ? 'https' : 'http';
             $this->appBase = $this->config->get('appBaseURL', "$schema://$host$this->appRoot");
@@ -266,7 +266,7 @@ class App
     
     private function readUseArgs(array $src, array &$paths, array &$methods, array &$handlers, $context = ''): void
     {
-        foreach ($src as $i => $arg) {
+        foreach ($src as $arg) {
             if (is_string($arg)) {
                 if (in_array(strtoupper($arg), self::$HTTP_METHODS, true)) {
                     $methods[] = strtoupper($arg);
@@ -292,8 +292,7 @@ class App
         $args = func_get_args();
         
         $this->readUseArgs($args, $paths, $methods, $modules);
-    
-        $path = null;
+
         if (!empty($paths)) {
             $fits = false;
             foreach ($paths as $pth) {
@@ -362,11 +361,11 @@ class App
             $h = $map[$path[$i]];
             if (is_array($h) && !is_callable($h)) {
                 $this->route($map[$path[$i]], $i + 1, $path);
-                $method = isset($handler["method"]) ? $handler["method"] : null;
-                $handler = isset($handler["handler"]) ? $handler["handler"] : null;
+                $method = isset($h["method"]) ? $h["method"] : null;
+                $handler = isset($h["handler"]) ? $h["handler"] : null;
                 if ($handler) {
                     if ($i == count($path) - 1) {
-                        $this->use(join('/', array_slice($path, 0, $i)), $h, $method);
+                        $this->use(join('/', array_slice($path, 0, $i)), $handler, $method);
                     }
                 }
             } else if ((is_string($h) || is_callable($h)) && ($i == count($path) - 1)) {
