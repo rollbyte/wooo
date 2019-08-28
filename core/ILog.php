@@ -5,9 +5,9 @@ namespace wooo\core;
 interface ILog
 {
   
-    public function error(\Throwable $error);
+    public function error(\Throwable $error): void;
   
-    public function warn($msg);
+    public function warn(string $msg): void;
   
-    public function info($msg);
+    public function info(string $msg): void;
 }

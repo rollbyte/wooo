@@ -59,7 +59,7 @@ class Locale
         return $this->fullDateFormater->format($date);
     }
   
-    public function parseDate($v, $withTime = true): ?\DateTime
+    public function parseDate(string $v, $withTime = true): ?\DateTime
     {
         $ts = $this->fullDateFormater->parse($v);
         if ($ts === false) {

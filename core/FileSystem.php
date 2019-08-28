@@ -5,14 +5,14 @@ namespace wooo\core;
 class FileSystem
 {
   
-    public static function forceDir($dir)
+    public static function forceDir(string $dir): void
     {
         if (!file_exists($dir)) {
             mkdir($dir, 0777, true);
         }
     }
   
-    public static function deleteDir($dir)
+    public static function deleteDir(string $dir): void
     {
         if (is_dir($dir)) {
             $entries = scandir($dir);
@@ -29,7 +29,7 @@ class FileSystem
         }
     }
   
-    public static function listFiles($dir)
+    public static function listFiles(string $dir): array
     {
         $temp = array_values(array_filter(
             scandir($dir),
@@ -47,7 +47,7 @@ class FileSystem
         return $temp;
     }
   
-    public static function isAbsolute($path)
+    public static function isAbsolute(string $path): bool
     {
         if (preg_match('/^([\\/]|[a-zA-Z]\:\\\\).*$/', trim($path))) {
             return true;
@@ -55,7 +55,7 @@ class FileSystem
         return is_string(parse_url($path, PHP_URL_SCHEME));
     }
   
-    public static function path(array $parts)
+    public static function path(array $parts): string
     {
         return join(DIRECTORY_SEPARATOR, $parts);
     }

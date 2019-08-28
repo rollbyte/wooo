@@ -28,12 +28,12 @@ class PasswordHash
         }
     }
     
-    public function apply($pwd)
+    public function apply(string $pwd): string
     {
         return password_hash($pwd, $this->algo);
     }
     
-    public static function check($password, $hash)
+    public static function check(string $password, string $hash): bool
     {
         return password_verify($password, $hash);
     }

@@ -5,7 +5,7 @@ namespace wooo\core;
 class Log implements ILog
 {
   
-    public function warn($msg)
+    public function warn(string $msg): void
     {
         $date = date("Y-m-d h:m:s");
         $de = ini_get('display_errors');
@@ -16,7 +16,7 @@ class Log implements ILog
         }
     }
   
-    public function error(\Throwable $error)
+    public function error(\Throwable $error): void
     {
         $date = date("Y-m-d h:m:s");
         $file = $error->getFile();
@@ -32,7 +32,7 @@ class Log implements ILog
         }
     }
   
-    public function info($msg)
+    public function info(string $msg): void
     {
         $date = date("Y-m-d h:m:s");
         $de = ini_get('display_errors');
