@@ -79,13 +79,19 @@ class Scope implements ContainerInterface
                         return floatval($v);
                     case 'bool':
                         return ($v == 'false') ? false : boolval($v);
+                    case \DateTime::class:
+                    case DateTime::class:
+                    case 'date':
+                        return new DateTime($v);
                 }
             }
         }
         if (is_array($v)) {
-            array_walk($v, function (&$av) use ($type) {
-                $av = $this->parseValue($av, $type);
-            });
+            $tmp = $v;
+            $v = [];
+            foreach ($tmp as $nm => $value) {
+                $v[$this->parseValue($nm)] = $this->parseValue($value);
+            }
         }
         return $v;
     }
@@ -119,6 +125,12 @@ class Scope implements ContainerInterface
                         if ($className === Request::class) {
                             $tmp = $this->app->request();
                         }
+                        if ($className === Session::class) {
+                            $tmp = $this->app->request() ? $this->app->request()->session() : null;
+                        }
+                        if ($className === Scope::class) {
+                            $tmp = $this;
+                        }
                         if ($className === Response::class) {
                             $tmp = $this->app->response();
                         }
@@ -147,7 +159,9 @@ class Scope implements ContainerInterface
                                 }
                                 $c = new \ReflectionClass($className);
                                 $passed[$className] = true;
-                                $tmp = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), [], $passed));
+                                if ($c->isInstantiable()) {
+                                    $tmp = $c->newInstanceArgs($this->parseArgs($c->getConstructor(), [], $passed));
+                                }
                             }
                         }
                     }
@@ -164,41 +178,62 @@ class Scope implements ContainerInterface
                 $result[$i] = $tmp;
                 $tmp = null;
             } elseif ($j < $n1) {
-                $result[$i] = $this->parseValue($args[$j], $type);
+                $result[$i] = $this->parseValue(
+                    $args[$j],
+                    ($type instanceof \ReflectionNamedType) ? $type->getName() : $type
+                );
                 $j++;
             }
         }
         return $result;
     }
   
-    private function parseOptions(\ReflectionClass $c, $options)
+    private function applyOptions($component, \ReflectionClass $c, $options)
     {
-        $result = [];
         if (is_array($options)) {
             foreach ($options as $nm => $v) {
                 $m = "set" . ucwords($nm);
-                if ($c->hasMethod($m)) {
-                    $m1 = $c->getMethod($m);
-                    if ($m1->getNumberOfParameters()) {
-                        $param = $m1->getParameters()[0];
-                        $type = $param->getType();
-                        $tmp = (is_array($v) && $this->isOrdinal($v)) ? $v : [$v];
-                        $tmp2 = [];
-                        $n = count($tmp);
-                        for ($i = 0; $i < $n; $i++) {
-                            if (!isset($tmp[$i])) {
-                                throw new ScopeException(ScopeException::INJECTION_FAILED, [$nm]);
+                if ($c->hasMethod($nm) || $c->hasMethod($m)) {
+                    $m1 = $c->hasMethod($nm) ? $c->getMethod($nm) : $c->getMethod($m);
+                    if ($pn = $m1->getNumberOfParameters()) {
+                        $params = $m1->getParameters();
+                        if (is_array($v) && $params[0]->getType() == 'array' && $pn == 1) {
+                            $m1->invoke($component, $this->parseValue($v));
+                        } if (is_array($v) && $this->isOrdinal($v)) {
+                            $multicall = true;
+                            foreach ($v as $call) {
+                                if (!is_array($call) || !$this->isOrdinal($call)) {
+                                    $multicall = false;
+                                    break;
+                                }
                             }
-                            $tmp2[] = ($type && !$type->isBuiltin()) ?
-                                $this->evaluate($this->parseValue($tmp[$i])) :
-                                $this->parseValue($tmp[$i], $type);
+
+                            if ($multicall) {
+                                $args = $this->parseArgs($m1, $v);
+                                if ($pn == count(array_filter($args))) {
+                                    $multicall = false;
+                                }
+                            }
+                            
+                            if ($multicall) {
+                                foreach ($v as $call) {
+                                    $m1->invokeArgs($component, $this->parseArgs($m1, $call));
+                                }
+                            } else {
+                                $m1->invokeArgs($component, $args ?? $this->parseArgs($m1, $v));
+                            }
+                        } else {
+                            $m1->invokeArgs($component, $this->parseArgs($m1, [$v]));
                         }
-                        $result[$m] = $tmp2;
+                    } else {
+                        $m1->invoke($component);
                     }
+                } else {
+                    $pv = $this->parseValue($v);
+                    $component->$nm = is_string($pv) ? $this->evaluate($pv) ?? $pv : $pv;
                 }
             }
         }
-        return $result;
     }
     
     private function instantiate(string $cn, ?string $name = null, array $args = [], ?array $options = null)
@@ -224,15 +259,7 @@ class Scope implements ContainerInterface
         }
         
         if (is_array($options)) {
-            $opts = $this->parseOptions($c, $options);
-            foreach ($opts as $m => $v) {
-                if (!is_array($v)) {
-                    $v = [$v];
-                }
-                foreach ($v as $v1) {
-                    $c->getMethod($m)->invoke($component, $v1);
-                }
-            }
+            $this->applyOptions($component, $c, $options);
         }
         return $component;
     }

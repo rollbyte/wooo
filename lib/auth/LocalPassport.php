@@ -7,6 +7,10 @@ use wooo\lib\auth\interfaces\IPassport;
 use wooo\core\PasswordHash;
 use wooo\lib\dbal\interfaces\DbDriver;
 
+/**
+ * @author krasilneg
+ * 
+ */
 class LocalPassport implements IPassport
 {
   
@@ -21,13 +25,21 @@ class LocalPassport implements IPassport
     {
         $this->db = $db;
     }
-    
-    public function setTableName($name)
+
+    /**
+     * 
+     * @param string $name
+     */    
+    public function setTableName(string $name)
     {
         $this->tableName = $name;
     }
-  
-    public function authorise(array $credentials): ?IUser
+    
+    /**
+     * {@inheritDoc}
+     * @see \wooo\lib\auth\interfaces\IPassport::authenticate()
+     */
+    public function authenticate(array $credentials): ?IUser
     {
         $u = $this->db->get(
             "select * from $this->tableName where login = :login and active = 1",
@@ -40,5 +52,15 @@ class LocalPassport implements IPassport
             }
         }
         return null;
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @param array $credentials ['login' => login, 'pwd' => password]
+     * @see \wooo\lib\auth\interfaces\IPassport::applicable()
+     */
+    public function applicable(array $credentials): bool
+    {
+        return isset($credentials['login']) && isset($credentials['pwd']);   
     }
 }

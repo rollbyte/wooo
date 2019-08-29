@@ -83,7 +83,21 @@ abstract class OAuth2Passport implements IPassport
     {
         return [];
     }
-  
+    
+    /**
+     * {@inheritDoc}
+     * @param array $credentials [$this->authParams['code'] => OAuth2 code]
+     * @see \wooo\lib\auth\interfaces\IPassport::applicable()
+     */
+    public function applicable(array $credentials): bool
+    {
+        return isset($credentials[$this->authParams['code']]);
+    }
+    
+    /**
+     * {@inheritDoc}
+     * @see \wooo\lib\auth\interfaces\IPassport::authorise()
+     */
     public function authorise(array $credentials): ?IUser
     {
         if (isset($credentials[$this->authParams['error']])) {

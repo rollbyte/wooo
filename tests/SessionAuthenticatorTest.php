@@ -32,8 +32,7 @@ class SessionAuthenticatorTest extends TestCase
         
         $auth = new SessionAuthenticator($req);
         
-        $auth->setPassportType('virtual');
-        $auth->setPassport(new VirtualPassport());
+        $auth->setup('virtual', new VirtualPassport());
         
         $map = $auth->passports();
         

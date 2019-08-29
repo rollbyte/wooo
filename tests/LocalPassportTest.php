@@ -33,7 +33,7 @@ class LocalPassportTest extends TestCase
         $ph = new PasswordHash();
         $pwd = $ph->apply('12345');
         self::$connection->exec('insert into users (login, pwd, active) values (\'user1\', \'' . $pwd . '\', 1)');
-        $u = self::$passport->authorise(['login' => 'user1', 'pwd' => '12345']);
+        $u = self::$passport->authenticate(['login' => 'user1', 'pwd' => '12345']);
         $this->assertInstanceOf(User::class, $u, 'authentication test failed');
     }
 }

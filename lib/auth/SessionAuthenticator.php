@@ -2,17 +2,12 @@
 
 namespace wooo\lib\auth;
 
-use wooo\lib\auth\interfaces as auth;
 use wooo\lib\auth\interfaces\IUser;
 use wooo\core\Request;
 
-class SessionAuthenticator implements auth\IAuthenticator
+class SessionAuthenticator extends Authenticator
 {
   
-    private $passportTypes = [];
-  
-    private $passports = [];
-    
     /**
      * @var \wooo\core\Session
      */
@@ -22,51 +17,7 @@ class SessionAuthenticator implements auth\IAuthenticator
     {
         $this->session = $req->session();
     }
-  
-    public function setPassport(auth\IPassport $passport)
-    {
-        array_push($this->passports, $passport);
-    }
-  
-    public function setPassportType(string $type)
-    {
-        array_push($this->passportTypes, $type);
-    }
-  
-    protected function passportMap()
-    {
-        $combine = [];
-        foreach ($this->passports as $ind => $p) {
-            if (isset($this->passportTypes[$ind])) {
-                $combine[$this->passportTypes[$ind]] = $p;
-            } else {
-                $combine[auth\IAuthenticator::TYPE_LOCAL] = $p;
-            }
-        }
-        return $combine;
-    }
-  
-    public function login(array $credentials, string $type = auth\IAuthenticator::TYPE_LOCAL): void
-    {
-        $combine = $this->passportMap();
     
-        if (isset($combine[$type])) {
-            /**
-             *
-             * @var auth\IPassport
-             */
-            $p = $combine[$type];
-      
-            $u = $p->authorise($credentials);
-            if ($u) {
-                $this->session->set('curr_user', $u);
-                return;
-            }
-            throw new AuthException(AuthException::INVALID_CREDENTIALS);
-        }
-        throw new AuthException(AuthException::NO_PASSPORT, [$type]);
-    }
-  
     public function force(IUser $user): void
     {
         $this->session->set('curr_user', $user);
@@ -79,7 +30,6 @@ class SessionAuthenticator implements auth\IAuthenticator
   
     /**
      * {@inheritdoc}
-     *
      * @see \wooo\lib\auth\interfaces\IAuthenticator::user()
      */
     public function user(): ?IUser
@@ -87,8 +37,8 @@ class SessionAuthenticator implements auth\IAuthenticator
         return $this->session->get('curr_user');
     }
   
-    public function passports(): array
+    protected function store(IUser $user): void
     {
-        return $this->passportMap();
+        $this->session->set('curr_user', $user);
     }
 }
