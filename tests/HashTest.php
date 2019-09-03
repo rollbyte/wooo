@@ -19,12 +19,15 @@ class HashTest extends TestCase
         
         $this->assertEquals('b8486542', $hash, 'crc32 hashing test failed');
         
+        $h = new Hash(Hash::SHA256);
+        $hash = $h->apply('12345', '777');
         // TODO test other hash types
     }
     
     public function testHashInvalidAlgo(): void
     {
         $this->expectExceptionCode(CoreException::INVALID_HASH_ALGO);
-        new Hash('foo');
+        $h = new Hash('foo');
+        $h->apply('1234');
     }
 }
