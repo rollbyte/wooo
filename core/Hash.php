@@ -29,14 +29,20 @@ final class Hash
     
     public function __construct(string $algo = self::MD5)
     {
-        if (!in_array($algo, hash_algos())) {
-            throw new CoreException(CoreException::INVALID_HASH_ALGO);
-        }
         $this->algo = $algo;
     }
 
-    public function apply(string $data): string
+    public function apply(string $data, ?string $key = null): string
     {
+        if ($key) {
+            if (!in_array($this->algo, hash_hmac_algos())) {
+                throw new CoreException(CoreException::INVALID_HASH_ALGO);
+            }
+            return hash_hmac($this->algo, $data, $key);
+        }
+        if (!in_array($this->algo, hash_algos())) {
+            throw new CoreException(CoreException::INVALID_HASH_ALGO);
+        }
         return hash($this->algo, $data);
     }
 }

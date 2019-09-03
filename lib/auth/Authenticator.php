@@ -17,9 +17,9 @@ abstract class Authenticator implements auth\IAuthenticator
         $this->session = $req->session();
     }
     
-    public function setup(string $type, IPassport $passport)
+    public function setup(string $name, IPassport $passport)
     {
-        $this->passports[$type] = $passport;
+        $this->passports[$name] = $passport;
     }
     
     protected abstract function store(IUser $user): void;

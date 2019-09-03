@@ -45,12 +45,12 @@ class User implements wooo\IUser
         return $this->properties;
     }
     
-    public function set($nm, $value)
+    public function set(string $nm, $value)
     {
         $this->properties[$nm] = $value;
     }
     
-    public function get($nm)
+    public function get(string $nm)
     {
         return isset($this->properties[$nm]) ? $this->properties[$nm] : null;
     }

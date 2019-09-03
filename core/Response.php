@@ -119,6 +119,11 @@ class Response
                 $this->setCookie($name . "[$u]", null, time() - 86400, $path);
             }
         } else {
+            if (!is_null($v) && ($key = $this->app->config()->get('cookieValidationKey', false))) {
+                $h = new Hash(Hash::SHA256);
+                $hash = $h->apply($value, $key);
+                $value = base64_encode($hash . $value);
+            }
             setcookie($name, $value, $expire, $path, null, null, $http_only);
         }
         return $this;

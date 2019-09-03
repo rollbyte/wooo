@@ -14,10 +14,10 @@ class LocalFileStorage implements IFileStorage
   
     private $storagePath = null;
   
-    public function __construct(App $app, $path = 'files')
+    public function __construct(?App $app, $path = 'files')
     {
         if (!FileSystem::isAbsolute($path)) {
-            $appPath = $app->appPath();
+            $appPath = $app ? $app->appPath() : false;
             if (!$appPath) {
                 throw new FileStorageException(FileStorageException::LOCAL_NO_APP_PATH);
             }
@@ -26,7 +26,7 @@ class LocalFileStorage implements IFileStorage
         $this->storagePath = $path;
     }
   
-    public function getStoragePath()
+    public function getStoragePath(): ?string
     {
         return $this->storagePath;
     }

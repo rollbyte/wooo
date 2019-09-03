@@ -11,10 +11,28 @@ class Config
     {
         $this->config = $config;
     }
+    
+    private function resolve($nm, $default)
+    {
+        $pos = strpos($nm, '.');
+        if ($pos !== false) {
+            $base = substr($nm, 0, $pos);
+            $path = substr($nm, $pos + 1);
+            if (isset($this->config[$base])) {
+                if (is_array($this->config[$base])) {
+                    $this->config[$base] = new Config($this->config[$base]);
+                }
+                if ($this->config[$base] instanceof Config) {
+                    return $this->config[$base]->get($path, $default);
+                }
+            }
+        }
+        return $default;
+    }
   
     public function get($name, $default = null)
     {
-        return isset($this->config[$name]) ? $this->config[$name] : $default;
+        return isset($this->config[$name]) ? $this->config[$name] : $this->resolve($name, $default);
     }
   
     public function set($name, $value): Config

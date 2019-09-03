@@ -29,6 +29,8 @@ class Request
     private $rawPostData = null;
   
     private $tz;
+    
+    private $app;
 
     /**
      * @var \wooo\core\Locale
@@ -75,6 +77,7 @@ class Request
   
     public function __construct(App $app)
     {
+        $this->app = $app;
         if (!isset($_SERVER['REQUEST_URI'])) {
             if (isset($_SERVER['HTTP_X_ORIGINAL_URL'])) {
                 $this->uri = $_SERVER['HTTP_X_ORIGINAL_URL'];
@@ -181,7 +184,6 @@ class Request
                 }
             }
         }
-        
         $this->sess = Session::instance($app->config());
     }
     
@@ -222,6 +224,15 @@ class Request
         if (isset($_COOKIE[$nm])) {
             $v = $this->acceptValue($_COOKIE[$nm]);
             if ($v) {
+                if ($key = $this->app->config()->get('cookieValidationKey', false)) {
+                    $v = base64_decode($v);
+                    $h = new Hash(Hash::SHA256);
+                    $tmp = $h->apply('', $key);
+                    $hashLength = mb_strlen($tmp, '8bit');
+                    $cookieValue = mb_substr($v, $hashLength, null, '8bit');
+                    $calcHash = $h->apply($cookieValue, $key);
+                    $v = hash_equals($calcHash, mb_substr($v, 0, $hashLength, '8bit')) ? $cookieValue : null;
+                }
                 return $v;
             }
         }

@@ -12,7 +12,7 @@ class FileStorageException extends \Exception
     public function __construct($code, $params = [], \Throwable $cause = null)
     {
         parent::__construct(
-            is_int($code) ? vsprintf(self::$messages[$code] ?? 'Unknown authentication error', $params) : $code,
+            is_int($code) ? vsprintf(self::$messages[$code] ?? 'Unknown file storage error', $params) : $code,
             is_int($code) ? $code : null,
             $cause
         );

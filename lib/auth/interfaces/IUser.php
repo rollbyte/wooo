@@ -13,7 +13,7 @@ interface IUser
   
     public function properties(): array;
     
-    public function set($nm, $value);
+    public function set(string $nm, $value);
     
-    public function get($nm);
+    public function get(string $nm);
 }
