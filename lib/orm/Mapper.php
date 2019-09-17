@@ -108,7 +108,7 @@ class Mapper
         return $cn;
     }
     
-    public function setDescendants(array $setup)
+    public function setDescendants(array $setup): Mapper
     {
         foreach ($setup as $parent => $descs) {
             if (is_string($descs)) {
@@ -141,6 +141,7 @@ class Mapper
                 }
             }
         }
+        return $this;
     }
   
     public function multiFieldIdSeparator(): string
@@ -1480,7 +1481,7 @@ class Mapper
      * @param  array  $options
      * @return object
      */
-    public function create($cn, $data, $options = [])
+    public function create($cn, $data, $options = []): object
     {
         $orm = $this->getOrmParams($cn);
         if (is_object($data)) {
@@ -1510,7 +1511,7 @@ class Mapper
      * @param  array  $options
      * @return object
      */
-    public function edit($cn, $id, $data, $options = [])
+    public function edit($cn, $id, $data, $options = []): ?object
     {
         $orm = $this->getOrmParams($cn, $options['descendants'] ?? null);
         if (is_object($data)) {
@@ -1545,7 +1546,7 @@ class Mapper
      * @param  array  $options
      * @return object
      */
-    public function save($obj, $options = [])
+    public function save($obj, $options = []): object
     {
         $cn = get_class($obj);
         $orm = $this->getOrmParams($cn);
@@ -1573,7 +1574,7 @@ class Mapper
      * @param  string $id
      * @return boolean
      */
-    public function delete($cn, $id = null, array $options = [])
+    public function delete($cn, $id = null, array $options = []): bool
     {
         if (is_object($cn)) {
             $id = $this->getObjectKey($cn);
@@ -1836,7 +1837,7 @@ class Mapper
      * @param  array  $params
      * @return array
      */
-    public function count($cn, array $options = [], array $params = [])
+    public function count($cn, array $options = [], array $params = []): int
     {
         return intval($this->ds->scalar($this->buildSelect($cn, $options, true), $this->processParams($params)));
     }
@@ -1848,7 +1849,7 @@ class Mapper
      * @param  array  $params
      * @return object
      */
-    public function get($cn, array $options = [], array $params = [])
+    public function get($cn, array $options = [], array $params = []): ?object
     {
         $options['count'] = 1;
         $result = $this->fetch($cn, $options, $params);
@@ -1863,7 +1864,7 @@ class Mapper
      * @param array $params
      * @return object
      */
-    public function getById($cn, $id, $options = [], $params = [])
+    public function getById($cn, $id, $options = [], $params = []): ?object
     {
         $kd = $this->idToKeyData($cn, $id);
         $filter = [];
@@ -1963,7 +1964,7 @@ class Mapper
      * @param  array  $params
      * @return \Traversable
      */
-    public function iterate($cn, array $options = [], array $params = [])
+    public function iterate($cn, array $options = [], array $params = []): \Traversable
     {
         $orm = $this->getOrmParams($cn, isset($options['descendants']) ? $options['descendants'] : []);
         $ft = $this->fieldTypes($orm);
@@ -1998,7 +1999,7 @@ class Mapper
         }
     }
   
-    public function attrTypes(object $obj)
+    public function attrTypes(object $obj): object
     {
         $result = new \stdClass();
         $orm = $this->getOrmParams(get_class($obj));
@@ -2066,7 +2067,7 @@ class Mapper
         }
     }
   
-    public function lazyLoaders(object $obj, array $options = [])
+    public function lazyLoaders(object $obj, array $options = []): object
     {
         $result = new \stdClass();
         $orm = $this->getOrmParams(get_class($obj), $options['descendants'] ?? null);

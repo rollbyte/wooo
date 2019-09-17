@@ -15,17 +15,17 @@ class ReCaptcha
         $this->secret = $secret;
     }
   
-    public function secret()
+    public function secret(): string
     {
         return $this->secret;
     }
   
-    public function key()
+    public function key(): string
     {
         return $this->key;
     }
   
-    public function verify($token)
+    public function verify($token): bool
     {
         $ch = curl_init('https://www.google.com/recaptcha/api/siteverify');
         curl_setopt($ch, CURLOPT_POST, 1);
