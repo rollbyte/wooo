@@ -32,7 +32,7 @@ class Session
         } else {
             self::$instance->name = $config ? $config->get('SESSION_NAME', 'wooo') : 'wooo';
         }
-        self::$instance;
+        return self::$instance;
     }
     
     public function setDomain($domain): Session
