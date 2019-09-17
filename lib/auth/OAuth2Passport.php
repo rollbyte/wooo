@@ -96,9 +96,9 @@ abstract class OAuth2Passport implements IPassport
     
     /**
      * {@inheritDoc}
-     * @see \wooo\lib\auth\interfaces\IPassport::authorise()
+     * @see \wooo\lib\auth\interfaces\IPassport::authenticate()
      */
-    public function authorise(array $credentials): ?IUser
+    public function authenticate(array $credentials): ?IUser
     {
         if (isset($credentials[$this->authParams['error']])) {
             throw new AuthException('OAuth2: ' . $credentials[$this->authParams['errorMsg']]);
