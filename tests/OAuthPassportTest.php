@@ -64,7 +64,7 @@ class OAuthPassportTest extends TestCase
     public function testAuthError(OAuth2Passport $passport): void
     {
         $this->expectExceptionMessage('OAuth2: invalid requester');
-        $passport->authorise(['error' => '401', 'error_description' => 'invalid requester']);
+        $passport->authenticate(['error' => '401', 'error_description' => 'invalid requester']);
     }
     
     /**
@@ -72,7 +72,7 @@ class OAuthPassportTest extends TestCase
      */
     public function testLogin(OAuth2Passport $passport): void
     {   
-        $u = $passport->authorise(['state' => 'valid', 'code' => 'auth_code']);
+        $u = $passport->authenticate(['state' => 'valid', 'code' => 'auth_code']);
         $this->assertInstanceOf(User::class, $u, 'authentication test failed');
         
         $url = $passport->authURL();
@@ -85,6 +85,6 @@ class OAuthPassportTest extends TestCase
             'auth url generation test failed'
         );
         $this->expectExceptionMessage('OAuth state is invalid.');
-        $u = $passport->authorise(['state' => 'valid', 'code' => 'auth_code']);
+        $u = $passport->authenticate(['state' => 'valid', 'code' => 'auth_code']);
     }
 }

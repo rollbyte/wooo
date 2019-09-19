@@ -255,26 +255,31 @@ class Mapper
                     }
                     $this->ormConfig[$cn]['map'][$p->getName()]['index'] = $ind;
                     $this->ormConfig[$cn]['map'][$p->getName()]['immutables'] = [];
-                    $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = [
-                        strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $p->getName()))
-                    ];
           
                     $this->ormConfig[$cn]['map'][$p->getName()]['type'] = $datatype;
                     $this->ormConfig[$cn]['map'][$p->getName()]['is_ref'] = $is_ref;
                     $this->ormConfig[$cn]['map'][$p->getName()]['is_array'] = $is_array;
                     $this->ormConfig[$cn]['map'][$p->getName()]['is_key'] =
-                                    in_array($p->getName(), $this->ormConfig[$cn]['key']);
+                        in_array($p->getName(), $this->ormConfig[$cn]['key']);
           
-                    if (preg_match_all('/@orm.immutable\s+(\w[_\w]*)\s*$/m', $pdoc, $matches)) {
-                        if (count($matches) > 1) {
-                            $this->ormConfig[$cn]['map'][$p->getName()]['immutables'] = $matches[1];
+                    if (!$is_array) {
+                        if (preg_match_all('/@orm.immutable\s+(\w[_\w]*)\s*$/m', $pdoc, $matches)) {
+                            if (count($matches) > 1) {
+                                $this->ormConfig[$cn]['map'][$p->getName()]['immutables'] = $matches[1];
+                            }
                         }
-                    }
 
-                    if (preg_match_all('/@orm.field\s+(\w[_\w]*)\s*$/m', $pdoc, $matches)) {
-                        if (count($matches) > 1) {
-                            $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = $matches[1];
+                        $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = [
+                            strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $p->getName()))
+                        ];
+                    
+                        if (preg_match_all('/@orm.field\s+(\w[_\w]*)\s*$/m', $pdoc, $matches)) {
+                            if (count($matches) > 1) {
+                                $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = $matches[1];
+                            }
                         }
+                    } else {
+                        $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = [];
                     }
           
                     if (preg_match_all('/@orm.backRef\s+(\w[_\w]*)\s*$/m', $pdoc, $matches)) {
@@ -329,19 +334,22 @@ class Mapper
                         throw new OrmException(OrmException::INVALID_ATTRIBUTE_VALUE, [$k]);
                     }
                     $kvs = $this->getObjectKey($v);
-                    foreach ($kvs as $kv) {
-                        $result[] = $kv;
+                    foreach ($kvs as $i => $kv) {
+                        $result[$keymeta['fields'][$i]] = $kv;
                     }
                 } else {
-                    $result[] = $v;
+                    $result[$keymeta['fields'][0]] = $v;
                 }
             }
         }
-        return $result;
+        return array_values($result);
     }
   
     private function getObjectKey($obj)
     {
+        if (is_null($obj)) {
+            return [];
+        }
         return $this->dataToKey($obj, get_class($obj));
     }
   
@@ -1097,15 +1105,15 @@ class Mapper
         $out = [];
         $this->ds->execute("insert into $tn ($fields) values ($pexpr)", $params, $out);
         if (count($key_data) == 0) {
+            $kvls = [];
             foreach ($key as $ind => $k) {
                 if ($keyprop = $this->propMeta($orm, $k)) {
-                    $mutable = array_diff($keyprop['fields'], $keyprop['immutables']);
-                    foreach ($mutable as $fld) {
+                    foreach ($keyprop['fields'] as $fld) {
                         if (isset($record[$fld])) {
-                            $key_data[] = $record[$fld];
+                            $kvls[$fld] = $record[$fld];
                         } else {
                             if ($out['rowid'] && $ind == 0) {
-                                $key_data[] = $out['rowid'];
+                                $kvls[$fld] = $out['rowid'];
                             } else {
                                 throw new OrmException(OrmException::NO_KEY_DATA, [$orm['cn']]);
                             }
@@ -1113,6 +1121,7 @@ class Mapper
                     }
                 }
             }
+            $key_data = array_values($kvls);
         }
     
         return $key_data;
@@ -1142,7 +1151,7 @@ class Mapper
         $params = [];
     
         $filter = [];
-        $id = is_array($id) ? $id : [$id];
+        $id = is_array($id) ? $id : $this->splitKey($id);
         $j = 0;
         
         $kd = $this->idToKeyData($orm['cn'], $id);
@@ -1269,45 +1278,66 @@ class Mapper
   
     private function idToKeyData($class, $id, $mask = false)
     {
-        $kv = is_array($id) ? $id : $this->splitKey($id);
+        $id = is_array($id) ? $id : $this->splitKey($id);
         $orm = $this->getOrmParams($class);
         $n = count($orm['key']);
         $result = [];
-        $j = 0;
-        $fv = [];
+        
+        $fldnames = [];
+        $propmetas = [];
+        foreach ($orm['key'] as $i => $prop) {
+            if (!$mask || in_array($i, $mask)) {
+                $propmeta = $this->propMeta($orm, $prop);
+                $propmetas[] = $propmeta;
+                foreach ($propmeta['fields'] as $fld) {
+                    $fldnames[$fld] = true;
+                }
+            }
+        }
+        $fldnames = array_keys($fldnames);
+        
+        $fldvalues = [];
+        
+        $ind = 0;
+        $context = null;
+        $prev = null;
+        foreach ($id as $i => $v) {
+            if (
+                is_null($prev) ||
+                (is_array($prev) && !is_array($v)) ||
+                (!is_array($prev) && is_array($v))
+            ) {
+                $context = array_shift($propmetas);
+            }
+            if (is_array($v)) {
+                foreach ($v as $j => $v1) {
+                    if (!isset($fldvalues[$context['fields'][$j]])) {
+                        $fldvalues[$context['fields'][$j]] = $v1;
+                        $ind++;
+                    }
+                }
+            } else {
+                $fldvalues[$fldnames[$ind]] = $v;
+                $ind++;
+            }
+            $prev = $v;
+        }
+        
+        
         for ($i = 0; $i < $n; $i++) {
-            if (array_key_exists($j, $kv) && (!$mask || in_array($i, $mask))) {
+            if (!$mask || in_array($i, $mask)) {
                 $prop = $orm['key'][$i];
                 $propmeta = $this->propMeta($orm, $prop);
                 $flds = $propmeta['fields'];
                 $n2 = count($flds);
                 if ($n2 == 1) {
-                    $result[$prop] = $this->castValue($kv[$j], $propmeta['type']);
-                    $fv[$flds[0]] = $result[$prop];
-                    $j++;
+                    $result[$prop] = $this->castValue($fldvalues[$flds[0]], $propmeta['type']);
                 } else {
                     $ref_id = [];
-                    $n3 = count($propmeta['immutables']);
-                    foreach ($propmeta['immutables'] as $ifn) {
-                        $ref_id[] = isset($fv[$ifn]) ? $fv[$ifn] : null;
+                    foreach ($flds as $fld) {
+                        $ref_id[] = $fldvalues[$fld];
                     }
-                    $ref_id = array_merge($ref_id, array_slice($kv, $j, $n2 - $n3, false));
-                    $j = $j + $n2 - $n3;
-                    $ref_id_kv = $this->idToKeyData($propmeta['type'], $ref_id);
-                    $v = [];
-                    foreach ($ref_id_kv as $v1) {
-                        if (is_array($v1)) {
-                            $v = $v + $v1;
-                        } else {
-                            $v[] = $v1;
-                        }
-                    }
-                    foreach ($v as $ind => $fvl) {
-                        if ($fvl !== null && !isset($fv[$flds[$ind]])) {
-                            $fv[$flds[$ind]] = $fvl;
-                        }
-                    }
-                    $result[$prop] = $v;
+                    $result[$prop] = $ref_id;
                 }
             }
         }
@@ -1319,7 +1349,7 @@ class Mapper
         if (is_string($id)) {
             return explode($this->multiFieldIdSeparator, $id);
         }
-        return [$id];
+        return is_array($id) ? $id : [$id];
     }
   
     private function castValue($v, $type)
