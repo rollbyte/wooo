@@ -139,7 +139,9 @@ class Scope implements ContainerInterface
                         $pv = null;
                         if ($j < $n1) {
                             $pv = $this->parseValue($args[$j]);
-                            $tmp = $this->evaluate($pv);
+                            if (is_string($pv)) {
+                                $tmp = $this->evaluate($pv);
+                            }
                         }
 
                         if ($tmp && ($tmp instanceof $className)) {
