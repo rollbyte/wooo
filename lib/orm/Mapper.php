@@ -338,7 +338,8 @@ class Mapper
                         $result[$keymeta['fields'][$i]] = $kv;
                     }
                 } else {
-                    $result[$keymeta['fields'][0]] = $v;
+                    $flds = array_values(array_diff($keymeta['fields'], $keymeta['immutables']));
+                    $result[empty($flds) ? $keymeta['fields'][0] : $flds[0]] = $v;
                 }
             }
         }
