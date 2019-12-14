@@ -1303,11 +1303,9 @@ class Mapper
         $context = null;
         $prev = null;
         foreach ($id as $i => $v) {
-            if (
-                is_null($prev) ||
+            if (is_null($prev) ||
                 (is_array($prev) && !is_array($v)) ||
-                (!is_array($prev) && is_array($v))
-            ) {
+                (!is_array($prev) && is_array($v))) {
                 $context = array_shift($propmetas);
             }
             if (is_array($v)) {

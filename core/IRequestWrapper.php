@@ -3,5 +3,5 @@ namespace wooo\core;
 
 interface IRequestWrapper
 {
-    function __construct(Request $req);
+    public function __construct(Request $req);
 }

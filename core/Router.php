@@ -9,7 +9,9 @@ class Router
     {
         $result = array_filter(
             $args,
-            function ($arg) use ($method) {return !is_string($arg) || (strtoupper($arg) != $method);}
+            function ($arg) use ($method) {
+                return !is_string($arg) || (strtoupper($arg) != $method);
+            }
         );
         array_walk(
             $result,

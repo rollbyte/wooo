@@ -69,7 +69,7 @@ class Request
             $v = $this->acceptValue($value, $urldecode);
             if (is_array($member)) {
                 $member[$key] = $v;
-            } else if (is_object($member)) {
+            } elseif (is_object($member)) {
                 $member->$key = $v;
             }
         }
@@ -246,7 +246,7 @@ class Request
             function ($v) {
                 if ($v[0] == '/') {
                     return '\/';
-                } else if (count($v) > 1) {
+                } elseif (count($v) > 1) {
                     return $v[1] . ($v[1][strlen($v[1]) - 1] == ')') ? '' : ')';
                 }
                 return '([\w%_-]+)';
@@ -361,7 +361,8 @@ class Request
         }
     }
     
-    public function __isset($nm) {
+    public function __isset($nm)
+    {
         return isset($this->locals[$nm]) || isset($this->getBody()->$nm) ||
                isset($this->getParameters()->$nm) || isset($this->getQuery()->$nm) ||
                isset($this->getFiles()->$nm);

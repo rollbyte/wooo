@@ -9,7 +9,7 @@ use wooo\lib\dbal\interfaces\DbDriver;
 
 /**
  * @author krasilneg
- * 
+ *
  */
 class LocalPassport implements IPassport
 {
@@ -27,9 +27,9 @@ class LocalPassport implements IPassport
     }
 
     /**
-     * 
+     *
      * @param string $name
-     */    
+     */
     public function setTableName(string $name)
     {
         $this->tableName = $name;
@@ -61,6 +61,6 @@ class LocalPassport implements IPassport
      */
     public function applicable(array $credentials): bool
     {
-        return isset($credentials['login']) && isset($credentials['pwd']);   
+        return isset($credentials['login']) && isset($credentials['pwd']);
     }
 }

@@ -14,7 +14,7 @@ class Token
         }
         if (is_int($param)) {
             $this->value = random_bytes($param);
-        } else if (is_string($param)) {
+        } elseif (is_string($param)) {
             $len = mb_strlen($param, '8bit');
             if ($len % 2 == 1) {
                 throw new CoreException(CoreException::INVALID_MASKED_TOKEN_VALUE);
@@ -33,9 +33,9 @@ class Token
     
     public function masked(): string
     {
-       $mask = new Token(mb_strlen($this->value, '8bit'));
-       $mask = $mask->value();
-       return $mask . ($mask ^ $this->value);
+        $mask = new Token(mb_strlen($this->value, '8bit'));
+        $mask = $mask->value();
+        return $mask . ($mask ^ $this->value);
     }
     
     public function __toString()

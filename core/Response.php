@@ -93,8 +93,13 @@ class Response
         return $this;
     }
   
-    public function setCookie(string $name, $value, ?int $expire = null, ?string $path = null, ?bool $http_only = false): Response
-    {
+    public function setCookie(
+        string $name,
+        $value,
+        ?int $expire = null,
+        ?string $path = null,
+        ?bool $http_only = false
+    ): Response {
         if (is_null($value)) {
             $expire = time() - 86400;
         }

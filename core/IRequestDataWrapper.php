@@ -3,5 +3,5 @@ namespace wooo\core;
 
 interface IRequestDataWrapper
 {
-    function __construct(object $data);
+    public function __construct(object $data);
 }

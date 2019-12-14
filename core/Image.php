@@ -23,8 +23,13 @@ class Image implements IImage
     /**
      * @throws \wooo\core\exceptions\CoreException
      */
-    public function convert(?int $type = null, ?int $width = null, ?int $height = null, bool $crop = false, ?string $filename = null): IFile
-    {
+    public function convert(
+        ?int $type = null,
+        ?int $width = null,
+        ?int $height = null,
+        bool $crop = false,
+        ?string $filename = null
+    ): IFile {
         $data = $this->getContents();
         
         list($orig_width, $orig_height, $orig_type) = getimagesizefromstring($data);

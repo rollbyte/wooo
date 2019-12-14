@@ -29,10 +29,10 @@ class DbSession implements \SessionHandlerInterface, \SessionUpdateTimestampHand
     }
   
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \SessionHandlerInterface::open()
-     */    
+     */
     public function open($sessionSavePath, $sessionName)
     {
         return true;

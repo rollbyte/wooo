@@ -22,10 +22,10 @@ abstract class Authenticator implements auth\IAuthenticator
         $this->passports[$name] = $passport;
     }
     
-    protected abstract function store(IUser $user): void;
+    abstract protected function store(IUser $user): void;
     
     public function login(array $credentials, ?string $passport = null): void
-    {   
+    {
         if (!$passport) {
             foreach ($this->passports as $t => $h) {
                 if ($h->applicable($credentials)) {

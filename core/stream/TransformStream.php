@@ -7,10 +7,10 @@ abstract class TransformStream implements IWritableStream, IPipeUnit
     
     public function close(): void
     {
-        $this->emit('close');    
+        $this->emit('close');
     }
 
-    protected abstract function transform($data);
+    abstract protected function transform($data);
     
     public function write(string $data): int
     {

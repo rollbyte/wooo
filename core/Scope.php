@@ -43,9 +43,9 @@ class Scope implements ContainerInterface
         foreach ($args as $arg) {
             if (is_array($arg)) {
                 $this->di = array_merge($arg, $this->di);
-            } else if ($arg instanceof App) {
-                $this->app = $arg;          
-            } else if ($arg instanceof Scope) {
+            } elseif ($arg instanceof App) {
+                $this->app = $arg;
+            } elseif ($arg instanceof Scope) {
                 $this->di = array_merge($arg->di, $this->di);
             }
         }
@@ -147,7 +147,7 @@ class Scope implements ContainerInterface
                         if ($tmp && ($tmp instanceof $className)) {
                             $j++;
                         } elseif ($pv !== $className) {
-                           if (isset($this->aliases[$className])) {
+                            if (isset($this->aliases[$className])) {
                                 try {
                                     $tmp = $this->evaluate($className);
                                 } catch (ScopeException $e) {
@@ -155,7 +155,7 @@ class Scope implements ContainerInterface
                                         throw $e;
                                     }
                                 }
-                            } else if (!($param->allowsNull() || $param->isOptional())) {
+                            } elseif (!($param->allowsNull() || $param->isOptional())) {
                                 if (isset($passed[$className])) {
                                     throw new ScopeException(ScopeException::CIRCULAR_DEPENDENCY);
                                 }
@@ -285,7 +285,7 @@ class Scope implements ContainerInterface
                 $this->registry[$name] = 'loading';
                 $component = $this->evaluate($this->parseValue($this->di[$name]));
                 $this->registry[$name] = $component;
-            } else if (is_array($this->di[$name])) {
+            } elseif (is_array($this->di[$name])) {
                 try {
                     $component = $this->instantiate(
                         $this->parseValue($this->di[$name]['class'] ?? $name),
@@ -300,7 +300,7 @@ class Scope implements ContainerInterface
             }
             
             return $component;
-        } else if (isset($this->aliases[$name])) {
+        } elseif (isset($this->aliases[$name])) {
             return $this->evaluate($this->aliases[$name]);
         }
         return null;
@@ -343,7 +343,7 @@ class Scope implements ContainerInterface
     
     public function new(string $class, array $args = [], ?array $options = null)
     {
-        return $this->instantiate($class, null, $args, $options);        
+        return $this->instantiate($class, null, $args, $options);
     }
     
     public function inject(): Scope

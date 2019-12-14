@@ -79,25 +79,26 @@ class App
         return $this->appBase;
     }
     
-    private function acceptCArg($arg, &$configSet) {
+    private function acceptCArg($arg, &$configSet)
+    {
         if (is_string($arg)) {
             $this->appPath = $arg;
-        } else if (is_array($arg)) {
+        } elseif (is_array($arg)) {
             if (!$configSet) {
                 $this->config->merge($arg);
                 $configSet = true;
             } else {
                 $this->scope->inject($arg);
             }
-        } else if ($arg instanceof Config) {
+        } elseif ($arg instanceof Config) {
             $this->config->merge($arg);
-        } else if ($arg instanceof Scope) {
+        } elseif ($arg instanceof Scope) {
             $this->scope->inject($arg);
-        } else if ($arg instanceof Request) {
+        } elseif ($arg instanceof Request) {
             $this->req = $arg->forContext($this);
-        } else if ($arg instanceof Response) {
+        } elseif ($arg instanceof Response) {
             $this->res = $arg;
-        } else if ($arg instanceof App) {
+        } elseif ($arg instanceof App) {
             $this->config->merge($arg->config());
             $this->scope->inherit($arg->scope());
             if (!$this->req) {
@@ -129,7 +130,10 @@ class App
         
         if (isset($_SERVER['HTTP_HOST'])) {
             $isWeb = true;
-            $this->appRoot = $this->config->get('appRootPath', str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->appPath));
+            $this->appRoot = $this->config->get(
+                'appRootPath',
+                str_replace($_SERVER['DOCUMENT_ROOT'], '', $this->appPath)
+            );
             $host = $_SERVER['HTTP_HOST'];
             $schema = isset($_SERVER['HTTPS']) ? 'https' : 'http';
             $this->appBase = $this->config->get('appBaseURL', "$schema://$host$this->appRoot");
@@ -232,9 +236,9 @@ class App
                                             get_object_vars($this->request()->getParameters()),
                                             get_object_vars($this->request()->getQuery()),
                                             get_object_vars($this->request()->getFiles()),
-                                         )
+                                        )
                                     );
-                                } else if (is_subclass_of($type->getName(), IRequestWrapper::class)) {
+                                } elseif (is_subclass_of($type->getName(), IRequestWrapper::class)) {
                                     $rc = new \ReflectionClass($type->getName());
                                     $tmp = $rc->newInstance($this->request());
                                 } else {
@@ -243,15 +247,23 @@ class App
                                 break;
                         }
                     }
-                } else if (isset($this->request()->$name)) {
+                } elseif (isset($this->request()->$name)) {
                     $tmp = $this->request()->$name;
                     if ($type) {
                         if ($type instanceof \ReflectionNamedType) {
                             switch ($type->getName()) {
-                                case 'string': $tmp = strval($tmp);break;
-                                case 'int': $tmp = intval($tmp);break;
-                                case 'float': $tmp = floatval($tmp);break;
-                                case 'bool': $tmp = boolval($tmp);break;
+                                case 'string':
+                                    $tmp = strval($tmp);
+                                    break;
+                                case 'int':
+                                    $tmp = intval($tmp);
+                                    break;
+                                case 'float':
+                                    $tmp = floatval($tmp);
+                                    break;
+                                case 'bool':
+                                    $tmp = boolval($tmp);
+                                    break;
                             }
                         }
                     }
@@ -290,7 +302,8 @@ class App
         return $this->rw;
     }
     
-    private function runRouter(string $context, Router $r) {
+    private function runRouter(string $context, Router $r)
+    {
         $map = $this->getRouterWrapper()->__map($r);
         foreach ($map as $args) {
             $paths = [];
@@ -307,14 +320,14 @@ class App
             if (is_string($arg)) {
                 if (in_array(strtoupper($arg), self::$HTTP_METHODS, true)) {
                     $methods[] = strtoupper($arg);
-                } else if (!$arg || $arg[0] == '/') {
+                } elseif (!$arg || $arg[0] == '/') {
                     $paths[] = $context . $arg;
                 } else {
                     $handlers[] = $arg;
                 }
-            } else if (is_array($arg)) {
+            } elseif (is_array($arg)) {
                 $this->readUseArgs($arg, $paths, $methods, $handlers, $context);
-            } else if (is_callable($arg) || ($arg instanceof Router)) {
+            } elseif (is_callable($arg) || ($arg instanceof Router)) {
                 $handlers[] = $arg;
             }
         }
@@ -405,7 +418,7 @@ class App
                         $this->use(join('/', array_slice($path, 0, $i)), $handler, $method);
                     }
                 }
-            } else if ((is_string($h) || is_callable($h)) && ($i == count($path) - 1)) {
+            } elseif ((is_string($h) || is_callable($h)) && ($i == count($path) - 1)) {
                 $this->use(join('/', array_slice($path, 0, $i)), $h);
             }
         }
@@ -423,8 +436,10 @@ class App
     {
         $result = array_filter(
             $args,
-            function ($arg) use ($method) {return !is_string($arg) || (strtoupper($arg) != $method);}
-            );
+            function ($arg) use ($method) {
+                return !is_string($arg) || (strtoupper($arg) != $method);
+            }
+        );
         array_walk(
             $result,
             function (&$arg) use ($method) {
@@ -435,7 +450,7 @@ class App
                     }
                 }
             }
-            );
+        );
         return array_filter($result);
     }
   
