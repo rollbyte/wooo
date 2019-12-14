@@ -34,6 +34,11 @@ class Response
     {
         $this->set($nm, $value);
     }
+    
+    public function __get($nm)
+    {
+        return $this->variables[$nm] ?? null;
+    }
   
     public function redirect($url)
     {
@@ -65,6 +70,11 @@ class Response
         }
         exit();
     }
+    
+    public function isSendable($data)
+    {
+        return !is_null($data);
+    }
   
     public function send($data)
     {
@@ -73,16 +83,18 @@ class Response
                 echo $chunk;
             }
             fclose($data);
-        } elseif (is_string($data)) {
-            echo $data;
         } elseif ($data instanceof IReadableStream) {
             while (!$data->eof()) {
                 echo $data->read(1024);
             }
             $data->close();
+        } elseif ($data instanceof \DateTime) {
+            echo $data->format(\DateTime::ISO8601);
         } elseif (is_array($data) || is_object($data)) {
             $this->setHeader("Content-Type:application/json; charset=utf-8");
             echo json_encode($data);
+        } elseif (!is_null($data)) {
+            echo strval($data);
         }
         exit();
     }

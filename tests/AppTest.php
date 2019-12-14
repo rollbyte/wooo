@@ -88,10 +88,11 @@ class AppTest extends TestCase
         $req->method('getFiles')->will($this->returnCallback(function () use ($req) {return $req->fileData;}));
         
         $res = $this->getMockBuilder(Response::class)
-        ->disableOriginalConstructor()
+        ->setConstructorArgs([$app])
         ->setMethods(['redirect', 'render', 'send', 'setStatus', 'setCookie', 'setHeader'])
         ->getMock();
         
+        $res->method('send')->will($this->returnCallback(function ($data) use ($res) {$res->wasSent = $data;}));
         $res->method('setStatus')->will($this->returnSelf());
         $res->method('setHeader')->will($this->returnSelf());
         $res->method('setCookie')->will($this->returnSelf());
@@ -345,5 +346,24 @@ class AppTest extends TestCase
         $this->assertTrue($checkedD, 'datetime request param binding test failed');
         $this->assertTrue($checkedE, 'untyped request param binding test failed');
         $this->assertTrue($checkedF, 'bool request param binding test failed');
+    }
+    
+    /**
+     * @depends testConstructor
+     */
+    public function testSendByReturn(App $app): void
+    {
+        $app->request()->http_method = 'POST';
+        $app->request()->bodyData = (object)['a' => 1, 'd' => 4];
+        $app->request()->queryData = (object)['b' => 2];
+
+        $app->post(
+            '/some/:c',
+            function (int $a, int $b, string $c, int $d) {
+                return ($a + $b + $d) . $c;
+            }
+        );
+
+        $this->assertEquals('7path', $app->response()->wasSent, 'Send response by return value test failed');
     }
 }

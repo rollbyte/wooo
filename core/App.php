@@ -138,6 +138,7 @@ class App
             $schema = isset($_SERVER['HTTPS']) ? 'https' : 'http';
             $this->appBase = $this->config->get('appBaseURL', "$schema://$host$this->appRoot");
         }
+        
         $INCLUDE_PATH = get_include_path() . PATH_SEPARATOR . $this->appPath;
     
         $PATH = $this->config->get('PATH');
@@ -274,7 +275,10 @@ class App
                 $args[] = $tmp ?? ($param->isDefaultValueAvailable() ? $param->getDefaultValue() : null);
                 $tmp = null;
             }
-            $reflection->invokeArgs($args);
+            $result = $reflection->invokeArgs($args);
+            if ($this->response()->isSendable($result)) {
+                $this->response()->send($result);
+            }
         } catch (NotFoundException $e) {
             $this->response()->setStatus(404)->send($e->getMessage());
         } catch (AccessDeniedException $e) {
