@@ -21,7 +21,7 @@ class CoreException extends \Exception
         self::INVALID_IMAGE_TYPE => 'Invalid result type specified for image conversion.',
         self::PATH_NOT_ABSOLUTE => 'Path should be absolute.',
         self::IO_OPERATION_FAILED => 'Failed to perform %s operation.',
-        self::INVALID_HANDLER_ARGUMENT => 'Invalid handler argument type specified.',
+        self::INVALID_HANDLER_ARGUMENT => 'Invalid handler argument type specified for "%s".',
         self::NOT_PIPE_UNIT => 'Piping is not applicable to the stream of %s class.',
         self::INVALID_MASKED_TOKEN_VALUE => 'Invalid masked token value.',
         self::INVALID_TOKEN_LENGTH => 'Invalid token length specified.'

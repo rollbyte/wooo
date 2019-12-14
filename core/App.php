@@ -188,8 +188,12 @@ class App
             $reflection = new \ReflectionFunction($module);
             $params = $reflection->getParameters();
             $args = [];
+            /**
+             * @var $param \ReflectionParameter
+             */
             foreach ($params as $param) {
                 $type = $param->getType();
+                $name = $param->getName();
                 if ($type && !$type->isBuiltin()) {
                     if ($type instanceof \ReflectionNamedType) {
                         switch ($type->getName()) {
@@ -213,16 +217,49 @@ class App
                                     $tmp = $this->request()->session();
                                 }
                                 break;
+                            case \DateTime::class:
+                            case DateTime::class:
+                                if (isset($this->request()->$name)) {
+                                    $tmp = new DateTime($this->request()->$name);
+                                }
+                                break;
                             default:
-                                $tmp = $this->scope()->get($type->getName());
+                                if (is_subclass_of($type->getName(), IRequestDataWrapper::class)) {
+                                    $rc = new \ReflectionClass($type->getName());
+                                    $tmp = $rc->newInstance(
+                                        (object)array_merge(
+                                            get_object_vars($this->request()->getBody()),
+                                            get_object_vars($this->request()->getParameters()),
+                                            get_object_vars($this->request()->getQuery()),
+                                            get_object_vars($this->request()->getFiles()),
+                                         )
+                                    );
+                                } else if (is_subclass_of($type->getName(), IRequestWrapper::class)) {
+                                    $rc = new \ReflectionClass($type->getName());
+                                    $tmp = $rc->newInstance($this->request());
+                                } else {
+                                    $tmp = $this->scope()->get($type->getName());
+                                }
                                 break;
                         }
                     }
+                } else if (isset($this->request()->$name)) {
+                    $tmp = $this->request()->$name;
+                    if ($type) {
+                        if ($type instanceof \ReflectionNamedType) {
+                            switch ($type->getName()) {
+                                case 'string': $tmp = strval($tmp);break;
+                                case 'int': $tmp = intval($tmp);break;
+                                case 'float': $tmp = floatval($tmp);break;
+                                case 'bool': $tmp = boolval($tmp);break;
+                            }
+                        }
+                    }
                 }
-                if (!isset($tmp)) {
-                    throw new CoreException(CoreException::INVALID_HANDLER_ARGUMENT);
+                if (!isset($tmp) && !$param->isDefaultValueAvailable() && !$param->allowsNull()) {
+                    throw new CoreException(CoreException::INVALID_HANDLER_ARGUMENT, [$name]);
                 }
-                $args[] = $tmp;
+                $args[] = $tmp ?? ($param->isDefaultValueAvailable() ? $param->getDefaultValue() : null);
                 $tmp = null;
             }
             $reflection->invokeArgs($args);

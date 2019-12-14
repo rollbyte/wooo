@@ -12,6 +12,9 @@ use wooo\core\Response;
 use wooo\tests\util\ComponentMock2;
 use wooo\core\Log;
 use wooo\core\Router;
+use wooo\tests\util\ReqWrapper;
+use wooo\core\DateTime;
+use wooo\tests\util\ReqDataWrapper;
 
 class AppTest extends TestCase
 {
@@ -70,13 +73,19 @@ class AppTest extends TestCase
         
         $req = $this->getMockBuilder(Request::class)
         ->setConstructorArgs([$app])
-        ->setMethods(['session', 'getMethod'])
+        ->setMethods(['session', 'getMethod', 'getBody', 'getQuery', 'getFiles'])
         ->getMock();
         
         $req->http_method = 'NONE';
+        $req->bodyData = new \stdClass();
+        $req->queryData = new \stdClass();
+        $req->fileData = new \stdClass();
         
         $req->method('session')->will($this->returnValue($session));
         $req->method('getMethod')->will($this->returnCallback(function () use ($req) {return $req->http_method;}));
+        $req->method('getBody')->will($this->returnCallback(function () use ($req) {return $req->bodyData;}));
+        $req->method('getQuery')->will($this->returnCallback(function () use ($req) {return $req->queryData;}));
+        $req->method('getFiles')->will($this->returnCallback(function () use ($req) {return $req->fileData;}));
         
         $res = $this->getMockBuilder(Response::class)
         ->disableOriginalConstructor()
@@ -271,5 +280,70 @@ class AppTest extends TestCase
     {
         $app->notFound();
         $this->assertTrue(true);
+    }
+    
+    /**
+     * @depends testConstructor
+     */
+    public function testRequestDataWrapper(App $app): void
+    {
+        $app->request()->http_method = 'POST';
+        $app->request()->bodyData = (object)['a' => 1];
+        $app->request()->queryData = (object)['b' => 2];
+        $app->request()->fileData = (object)['d' => 4];
+        $checked = false;
+        $app->post('/some/:c', function (ReqDataWrapper $r) use (&$checked) {
+            $checked = ($r->a + $r->b + $r->d) . $r->c == '7path';
+        });
+        $this->assertTrue($checked, 'Request data wrapper interface test failed');
+    }
+    
+    /**
+     * @depends testConstructor
+     */
+    public function testRequestWrapper(App $app): void
+    {
+        $app->request()->http_method = 'POST';
+        $app->request()->bodyData = (object)['a' => 1];
+        $app->request()->queryData = (object)['b' => 2];
+        $app->request()->fileData = (object)['d' => 4];
+        $checked = false;
+        $app->post('/some/:c', function (ReqWrapper $r) use (&$checked) {
+            $checked = ($r->a + $r->b + $r->d) . $r->c == '7path';
+        });
+        $this->assertTrue($checked, 'Request wrapper interface test failed');
+    }
+    
+    
+    /**
+     * @depends testConstructor
+     */
+    public function testReqParamPassing(App $app): void
+    {
+        $app->request()->http_method = 'POST';
+        $app->request()->bodyData = (object)['a' => '1', 'e' => [1, 2, 3]];
+        $app->request()->queryData = (object)['b' => '2.678', 'd' => '1917-10-25'];
+        $app->request()->fileData = (object)['f' => 0];
+        $checkedA = false;
+        $checkedB = false;
+        $checkedC = false;
+        $checkedD = false;
+        $checkedE = false;
+        $checkedF = false;
+        $app->post('/some/:c', function (int $a, float $b, string $c, \DateTime $d, bool $f, $e, $ololo = 'lol', ?int $i)
+            use (&$checkedA, &$checkedB, &$checkedC, &$checkedD, &$checkedE, &$checkedF) {
+            $checkedA = $a === 1;
+            $checkedB = $b === 2.678;
+            $checkedC = $c === 'path';
+            $checkedD = $d instanceof DateTime;
+            $checkedE = is_array($e);
+            $checkedF = $f === false;
+        });
+        $this->assertTrue($checkedA, 'int request param binding test failed');
+        $this->assertTrue($checkedB, 'float request param binding test failed');
+        $this->assertTrue($checkedC, 'string request param binding test failed');
+        $this->assertTrue($checkedD, 'datetime request param binding test failed');
+        $this->assertTrue($checkedE, 'untyped request param binding test failed');
+        $this->assertTrue($checkedF, 'bool request param binding test failed');
     }
 }

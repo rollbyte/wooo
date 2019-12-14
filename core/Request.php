@@ -350,14 +350,20 @@ class Request
         if (isset($this->getBody()->$nm)) {
             return $this->getBody()->$nm;
         }
-        if (isset($this->getFiles()->$nm)) {
-            return $this->getFiles()->$nm;
-        }
         if (isset($this->getParameters()->$nm)) {
             return $this->getParameters()->$nm;
         }
         if (isset($this->getQuery()->$nm)) {
             return $this->getQuery()->$nm;
         }
+        if (isset($this->getFiles()->$nm)) {
+            return $this->getFiles()->$nm;
+        }
+    }
+    
+    public function __isset($nm) {
+        return isset($this->locals[$nm]) || isset($this->getBody()->$nm) ||
+               isset($this->getParameters()->$nm) || isset($this->getQuery()->$nm) ||
+               isset($this->getFiles()->$nm);
     }
 }
