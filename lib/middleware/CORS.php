@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\lib\middleware;
 
 use wooo\core\App;
