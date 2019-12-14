@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\lib\auth;
 
 use wooo\lib\auth\interfaces as auth;

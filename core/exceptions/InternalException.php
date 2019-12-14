@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\core\exceptions;
 
 class InternalException extends \Exception

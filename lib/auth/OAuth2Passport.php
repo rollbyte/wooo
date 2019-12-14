@@ -126,9 +126,11 @@ abstract class OAuth2Passport implements IPassport
             $profile[isset($this->profileMap[$nm]) ? $this->profileMap[$nm] : $nm] = $v;
         }
     
-        if (!isset($profile['email']) ||
+        if (
+            !isset($profile['email']) ||
             !$profile['email'] ||
-            !filter_var($profile['email'], FILTER_VALIDATE_EMAIL)) {
+            !filter_var($profile['email'], FILTER_VALIDATE_EMAIL)
+        ) {
             throw new AuthException(AuthException::OAUTH_NO_EMAIL);
         }
     

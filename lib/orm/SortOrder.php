@@ -5,7 +5,7 @@ namespace wooo\lib\orm;
 class SortOrder
 {
     
-    const ASC = 0;
+    public const ASC = 0;
     
-    const DESC = 1;
+    public const DESC = 1;
 }

@@ -8,8 +8,8 @@ class PasswordHash
 {
     private $algo;
     
-    const DEFAULT = PASSWORD_DEFAULT;
-    const BCRYPT = PASSWORD_BCRYPT;
+    public const DEFAULT = PASSWORD_DEFAULT;
+    public const BCRYPT = PASSWORD_BCRYPT;
     
     public function __construct($algo = null)
     {

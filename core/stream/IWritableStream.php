@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\core\stream;
 
 interface IWritableStream extends IStream

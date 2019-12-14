@@ -110,8 +110,10 @@ class PDODriver implements wooo\DbDriver
     private function statement($q, $params, &$output = null)
     {
         $this->connect();
-        if (!isset($this->prepared[$q]) ||
-            ($this->prepared[$q]->errorCode() && $this->prepared[$q]->errorCode() !== '00000')) {
+        if (
+            !isset($this->prepared[$q]) ||
+            ($this->prepared[$q]->errorCode() && $this->prepared[$q]->errorCode() !== '00000')
+        ) {
             $this->prepared[$q] = $this->connection->prepare($q);
         }
         if (is_array($params)) {

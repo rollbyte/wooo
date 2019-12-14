@@ -25,7 +25,8 @@ class Scope implements ContainerInterface
         foreach ($this->di as $nm => $value) {
             if (is_array($value) && isset($value['class'])) {
                 $cn = $this->parseValue($value['class']);
-                if ($nm != $cn &&
+                if (
+                    $nm != $cn &&
                     !isset($this->aliases[$cn]) &&
                     !isset($this->di[$cn])
                 ) {
@@ -168,8 +169,10 @@ class Scope implements ContainerInterface
                         }
                     }
                     
-                    if (!$tmp && $this->app &&
-                        ($type->getName() === ILog::class || $type->getName() === Log::class)) {
+                    if (
+                        !$tmp && $this->app &&
+                        ($type->getName() === ILog::class || $type->getName() === Log::class)
+                    ) {
                         $tmp = $this->app->sysLog();
                     }
                     

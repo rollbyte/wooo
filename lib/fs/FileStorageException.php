@@ -1,9 +1,10 @@
 <?php
+
 namespace wooo\lib\fs;
 
 class FileStorageException extends \Exception
 {
-    const LOCAL_NO_APP_PATH = 7001;
+    public const LOCAL_NO_APP_PATH = 7001;
     
     private static $messages = [
         self::LOCAL_NO_APP_PATH => 'File storage failed to determine application path.'

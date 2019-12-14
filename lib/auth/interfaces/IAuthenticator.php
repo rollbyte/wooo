@@ -5,7 +5,7 @@ namespace wooo\lib\auth\interfaces;
 interface IAuthenticator
 {
   
-    const TYPE_LOCAL = 'local';
+    public const TYPE_LOCAL = 'local';
   
     public function login(array $credentials, ?string $passport = null): void;
   

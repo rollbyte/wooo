@@ -1,12 +1,13 @@
 <?php
+
 namespace wooo\lib\auth;
 
 class AuthException extends \Exception
 {
-    const OAUTH_INVALID_STATE = 6001;
-    const OAUTH_NO_EMAIL = 6002;
-    const INVALID_CREDENTIALS = 6003;
-    const NO_PASSPORT = 6004;
+    public const OAUTH_INVALID_STATE = 6001;
+    public const OAUTH_NO_EMAIL = 6002;
+    public const INVALID_CREDENTIALS = 6003;
+    public const NO_PASSPORT = 6004;
     
     private static $messages = [
         self::OAUTH_INVALID_STATE => 'OAuth state is invalid.',

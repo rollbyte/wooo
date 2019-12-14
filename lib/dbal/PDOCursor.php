@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\lib\dbal;
 
 use wooo\lib\dbal\interfaces\DbCursor;

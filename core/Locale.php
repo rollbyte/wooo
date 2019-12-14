@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @category Wooo
  * @package  Wooo
@@ -8,6 +9,7 @@
  *
  * Class of system locale object
  */
+
 namespace wooo\core;
 
 /**

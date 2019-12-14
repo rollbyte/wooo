@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\core\stream;
 
 abstract class TransformStream implements IWritableStream, IPipeUnit

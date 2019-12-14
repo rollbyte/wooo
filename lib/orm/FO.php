@@ -5,49 +5,49 @@ namespace wooo\lib\orm;
 class FO
 {
     
-    const EQ = 'eq';
+    public const EQ = 'eq';
     
-    const NE = 'ne';
+    public const NE = 'ne';
     
-    const LT = 'lt';
+    public const LT = 'lt';
     
-    const GT = 'gt';
+    public const GT = 'gt';
     
-    const LE = 'le';
+    public const LE = 'le';
     
-    const GE = 'ge';
+    public const GE = 'ge';
     
-    const BETWEEN = 'bw';
+    public const BETWEEN = 'bw';
     
-    const IN = 'in';
+    public const IN = 'in';
     
-    const AND = 'and';
+    public const AND = 'and';
     
-    const OR = 'or';
+    public const OR = 'or';
     
-    const NOT = 'not';
+    public const NOT = 'not';
     
-    const ISNULL = 'isnull';
+    public const ISNULL = 'isnull';
     
-    const ADD = 'add';
+    public const ADD = 'add';
     
-    const SUB = 'sub';
+    public const SUB = 'sub';
     
-    const MUL = 'mul';
+    public const MUL = 'mul';
     
-    const DIV = 'div';
+    public const DIV = 'div';
     
-    const MOD = 'mod';
+    public const MOD = 'mod';
     
-    const BW_AND = 'band';
+    public const BW_AND = 'band';
     
-    const BW_OR = 'bor';
+    public const BW_OR = 'bor';
     
-    const BW_XOR = 'bxor';
+    public const BW_XOR = 'bxor';
     
-    const NVL = 'nvl';
+    public const NVL = 'nvl';
     
-    const LIKE = 'like';
+    public const LIKE = 'like';
     
     public static function l()
     {

@@ -100,7 +100,7 @@ class Mapper
         }
     }
     
-    private function className($cn):string
+    private function className($cn): string
     {
         if (strpos($cn, '\\') === false) {
             return $this->namespace . $cn;
@@ -235,7 +235,8 @@ class Mapper
           
                     if (preg_match('/@var\s+([_\w\\\]+)(\[\])?/', $pdoc, $matches)) {
                         $datatype = $matches[1];
-                        if ($datatype !== 'string' &&
+                        if (
+                            $datatype !== 'string' &&
                             $datatype !== 'int' && $datatype !== 'bool' &&
                             $datatype !== 'float'
                         ) {
@@ -1303,9 +1304,11 @@ class Mapper
         $context = null;
         $prev = null;
         foreach ($id as $i => $v) {
-            if (is_null($prev) ||
+            if (
+                is_null($prev) ||
                 (is_array($prev) && !is_array($v)) ||
-                (!is_array($prev) && is_array($v))) {
+                (!is_array($prev) && is_array($v))
+            ) {
                 $context = array_shift($propmetas);
             }
             if (is_array($v)) {
@@ -1940,7 +1943,7 @@ class Mapper
     
     private function wrapCursor(DbCursor $cursor, callable $wrapper): \Iterator
     {
-        return new class($cursor, $wrapper) implements \Iterator
+        return new class ($cursor, $wrapper) implements \Iterator
         {
             
             /**

@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\core\stream;
 
 use wooo\core\exceptions\CoreException;
@@ -45,7 +46,7 @@ trait PipeUnitTrait
         }
         
         return (
-            new class($this, $destination) implements IPipeStarter
+            new class ($this, $destination) implements IPipeStarter
             {
                 private $base;
                 private $flushers = [];

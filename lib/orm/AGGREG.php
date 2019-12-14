@@ -5,13 +5,13 @@ namespace wooo\lib\orm;
 class AGGREG
 {
     
-    const SUM = 'sum';
+    public const SUM = 'sum';
     
-    const AVG = 'avg';
+    public const AVG = 'avg';
     
-    const COUNT = 'count';
+    public const COUNT = 'count';
     
-    const MIN = 'min';
+    public const MIN = 'min';
     
-    const MAX = 'max';
+    public const MAX = 'max';
 }

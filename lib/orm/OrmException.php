@@ -1,23 +1,24 @@
 <?php
+
 namespace wooo\lib\orm;
 
 class OrmException extends \Exception
 {
-    const CREATE_FAILED = 10001;
-    const SAVE_FAILED = 10002;
-    const UPDATE_FAILED = 10003;
-    const DELETE_FAILED = 10004;
-    const FETCH_FAILED = 10005;
-    const ITERATE_FAILED = 10006;
+    public const CREATE_FAILED = 10001;
+    public const SAVE_FAILED = 10002;
+    public const UPDATE_FAILED = 10003;
+    public const DELETE_FAILED = 10004;
+    public const FETCH_FAILED = 10005;
+    public const ITERATE_FAILED = 10006;
     
-    const CLASS_NO_KEY = 10007;
-    const ATTR_NOT_FOUND = 10008;
-    const QUERY_SYTAX_ERROR = 10009;
-    const INVALID_OPER = 10010;
-    const NO_DATA_FOR_REF_FIELD = 10011;
-    const NO_KEY_DATA = 10012;
-    const INVALID_ID = 10013;
-    const INVALID_ATTRIBUTE_VALUE = 10014;
+    public const CLASS_NO_KEY = 10007;
+    public const ATTR_NOT_FOUND = 10008;
+    public const QUERY_SYTAX_ERROR = 10009;
+    public const INVALID_OPER = 10010;
+    public const NO_DATA_FOR_REF_FIELD = 10011;
+    public const NO_KEY_DATA = 10012;
+    public const INVALID_ID = 10013;
+    public const INVALID_ATTRIBUTE_VALUE = 10014;
     
     private static $messages = [
         self::CREATE_FAILED => '%s class instance creation failed.',

@@ -1,4 +1,5 @@
 <?php
+
 namespace wooo\core;
 
 use wooo\core\exceptions\CoreException;

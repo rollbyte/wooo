@@ -7,23 +7,23 @@ use wooo\core\exceptions\CoreException;
 final class Hash
 {
     
-    const MD5 = "md5";
+    public const MD5 = "md5";
     
-    const SHA1 = "sha1";
+    public const SHA1 = "sha1";
     
-    const CRC32 = "crc32";
+    public const CRC32 = "crc32";
     
-    const WHIRLPOOL = "whirlpool";
+    public const WHIRLPOOL = "whirlpool";
     
-    const STD_DES = "des_std";
+    public const STD_DES = "des_std";
     
-    const EXT_DES = "des_ext";
+    public const EXT_DES = "des_ext";
     
-    const BLOWFISH = "blowfish";
+    public const BLOWFISH = "blowfish";
     
-    const SHA256 = "sha256";
+    public const SHA256 = "sha256";
     
-    const SHA512 = "sha512";
+    public const SHA512 = "sha512";
     
     private $algo;
     

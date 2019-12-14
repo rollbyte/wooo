@@ -9,14 +9,14 @@ test:
   php_cpd:
     path: "lib"
     standard: "PSR4"
-    allow_failures: false    
+    allow_failures: false
   php_code_sniffer:
     path: 'core'
-    standard: "PSR1,PSR2,PSR12"
+    standard: "PSR1,PSR12"
     allow_failures: false
   php_code_sniffer:
     path: 'lib'
-    standard: "PSR1,PSR2,PSR12"
+    standard: "PSR1,PSR12"
     allow_failures: false
   php_unit:
     config: phpunit.xml
