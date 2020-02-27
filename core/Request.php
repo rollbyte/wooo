@@ -42,39 +42,6 @@ class Request
      */
     private $sess;
   
-    private function acceptValue($value, $urldecode = false)
-    {
-        if (get_magic_quotes_gpc()) {
-            if (is_array($value)) {
-                array_walk_recursive(
-                    $value,
-                    function (&$item, $key, $urldecode) {
-                        $item = stripslashes($urldecode ? rawurldecode($item) : $item);
-                    },
-                    $urldecode
-                );
-            } else {
-                $value = stripslashes($urldecode ? rawurldecode($value) : $value);
-            }
-        }
-        if (!is_null($value)) {
-            return $value;
-        }
-        return null;
-    }
-  
-    private function acceptParams($params, $urldecode, &$member)
-    {
-        foreach ($params as $key => $value) {
-            $v = $this->acceptValue($value, $urldecode);
-            if (is_array($member)) {
-                $member[$key] = $v;
-            } elseif (is_object($member)) {
-                $member->$key = $v;
-            }
-        }
-    }
-  
     public function __construct(App $app)
     {
         $this->app = $app;
@@ -143,16 +110,14 @@ class Request
             $this->locale = new Locale(\Locale::getDefault());
         }
         
-        $this->query = new \stdClass();
-        $this->files = new \stdClass();
-        $this->pathParams = new \stdClass();
+        $this->query = new RequestData($_GET, true);
+        $this->files = new RequestData();
+        $this->pathParams = new RequestData();
     
-        $this->acceptParams($_GET, true, $this->query);
         if (strtolower($this->getHeader('Content-Type')) == 'application/json') {
-            $this->body = json_decode($this->getRawPostData());
+            $this->body = new RequestData(json_decode($this->getRawPostData()));
         } else {
-            $this->body = new \stdClass();
-            $this->acceptParams($_POST, false, $this->body);
+            $this->body = new RequestData($_POST);
         }
     
         foreach ($_FILES as $key => $file) {
