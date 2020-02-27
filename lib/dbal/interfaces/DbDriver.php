@@ -2,7 +2,9 @@
 
 namespace wooo\lib\dbal\interfaces;
 
-interface DbDriver
+use wooo\core\ITransactional;
+
+interface DbDriver extends ITransactional
 {
   
     public function execute(string $q, array $params = [], ?array &$output = null): DbDriver;
@@ -14,10 +16,4 @@ interface DbDriver
     public function get(string $q, array $params = [], array $types = []): ?object;
   
     public function iterate(string $q, array $params = [], array $types = []): DbCursor;
-  
-    public function begin(): void;
-  
-    public function commit(): void;
-  
-    public function rollback(): void;
 }
