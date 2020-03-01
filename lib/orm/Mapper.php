@@ -1325,7 +1325,6 @@ class Mapper
             $prev = $v;
         }
         
-        
         for ($i = 0; $i < $n; $i++) {
             if (!$mask || in_array($i, $mask)) {
                 $prop = $orm['key'][$i];
@@ -1333,7 +1332,7 @@ class Mapper
                 $flds = $propmeta['fields'];
                 $n2 = count($flds);
                 if ($n2 == 1) {
-                    $result[$prop] = $this->castValue($fldvalues[$flds[0]], $propmeta['type']);
+                    $result[$prop] = $this->castValue($fldvalues[$flds[0]] ?? null, $propmeta['type']);
                 } else {
                     $ref_id = [];
                     foreach ($flds as $fld) {
