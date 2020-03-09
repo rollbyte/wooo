@@ -1,6 +1,6 @@
 setup:
   composer:
-    action: "update"
+    action: "install"
 test:
   php_cpd:
     path: "core"
