@@ -282,22 +282,22 @@ class Request
         return $this->path;
     }
   
-    public function getParameters(): object
+    public function getParameters(): RequestData
     {
         return $this->pathParams;
     }
   
-    public function getQuery(): object
+    public function getQuery(): RequestData
     {
         return $this->query;
     }
   
-    public function getBody(): object
+    public function getBody(): RequestData
     {
         return $this->body;
     }
   
-    public function getFiles(): object
+    public function getFiles(): RequestData
     {
         return $this->files;
     }
