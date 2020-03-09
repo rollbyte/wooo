@@ -15,6 +15,7 @@ use wooo\core\Router;
 use wooo\tests\util\ReqWrapper;
 use wooo\core\DateTime;
 use wooo\tests\util\ReqDataWrapper;
+use wooo\core\RequestData;
 
 class AppTest extends TestCase
 {
@@ -77,9 +78,9 @@ class AppTest extends TestCase
         ->getMock();
         
         $req->http_method = 'NONE';
-        $req->bodyData = new \stdClass();
-        $req->queryData = new \stdClass();
-        $req->fileData = new \stdClass();
+        $req->bodyData = new RequestData();
+        $req->queryData = new RequestData();
+        $req->fileData = new RequestData();
         
         $req->method('session')->will($this->returnValue($session));
         $req->method('getMethod')->will($this->returnCallback(function () use ($req) {return $req->http_method;}));
@@ -289,9 +290,9 @@ class AppTest extends TestCase
     public function testRequestDataWrapper(App $app): void
     {
         $app->request()->http_method = 'POST';
-        $app->request()->bodyData = (object)['a' => 1];
-        $app->request()->queryData = (object)['b' => 2];
-        $app->request()->fileData = (object)['d' => 4];
+        $app->request()->bodyData = new RequestData(['a' => 1]);
+        $app->request()->queryData = new RequestData(['b' => 2]);
+        $app->request()->fileData = new RequestData(['d' => 4]);
         $checked = false;
         $app->post('/some/:c', function (ReqDataWrapper $r) use (&$checked) {
             $checked = ($r->a + $r->b + $r->d) . $r->c == '7path';
@@ -305,9 +306,9 @@ class AppTest extends TestCase
     public function testRequestWrapper(App $app): void
     {
         $app->request()->http_method = 'POST';
-        $app->request()->bodyData = (object)['a' => 1];
-        $app->request()->queryData = (object)['b' => 2];
-        $app->request()->fileData = (object)['d' => 4];
+        $app->request()->bodyData = new RequestData(['a' => 1]);
+        $app->request()->queryData = new RequestData(['b' => 2]);
+        $app->request()->fileData = new RequestData(['d' => 4]);
         $checked = false;
         $app->post('/some/:c', function (ReqWrapper $r) use (&$checked) {
             $checked = ($r->a + $r->b + $r->d) . $r->c == '7path';
@@ -322,9 +323,9 @@ class AppTest extends TestCase
     public function testReqParamPassing(App $app): void
     {
         $app->request()->http_method = 'POST';
-        $app->request()->bodyData = (object)['a' => '1', 'e' => [1, 2, 3]];
-        $app->request()->queryData = (object)['b' => '2.678', 'd' => '1917-10-25'];
-        $app->request()->fileData = (object)['f' => 0];
+        $app->request()->bodyData = new RequestData(['a' => '1', 'e' => [1, 2, 3]]);
+        $app->request()->queryData = new RequestData(['b' => '2.678', 'd' => '1917-10-25']);
+        $app->request()->fileData = new RequestData(['f' => 0]);
         $checkedA = false;
         $checkedB = false;
         $checkedC = false;
@@ -354,8 +355,8 @@ class AppTest extends TestCase
     public function testSendByReturn(App $app): void
     {
         $app->request()->http_method = 'POST';
-        $app->request()->bodyData = (object)['a' => 1, 'd' => 4];
-        $app->request()->queryData = (object)['b' => 2];
+        $app->request()->bodyData = new RequestData(['a' => 1, 'd' => 4]);
+        $app->request()->queryData = new RequestData(['b' => 2]);
 
         $app->post(
             '/some/:c',
