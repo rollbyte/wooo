@@ -1,12 +1,12 @@
 <?php
+
 namespace wooo\core;
 
-use \ArrayAccess as ArrayAccess;
-use \stdClass as stdClass;
+use ArrayAccess as ArrayAccess;
+use stdClass as stdClass;
 
 class RequestData extends stdClass implements ArrayAccess
 {
-    
     private static function acceptValue($value, $urldecode = false)
     {
         if (get_magic_quotes_gpc()) {
@@ -17,7 +17,7 @@ class RequestData extends stdClass implements ArrayAccess
                         $item = stripslashes($urldecode ? rawurldecode($item) : $item);
                     },
                     $urldecode
-                    );
+                );
             } else {
                 $value = stripslashes($urldecode ? rawurldecode($value) : $value);
             }
