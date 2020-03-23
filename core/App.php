@@ -16,6 +16,7 @@ use wooo\core\events\app\AppErrorEvent;
 class App implements IEventEmitter
 {
     use EventEmitter;
+
     /**
      * @var \wooo\core\Config
      */
@@ -247,8 +248,8 @@ class App implements IEventEmitter
                                         get_object_vars($this->request()->getParameters()),
                                         get_object_vars($this->request()->getQuery()),
                                         get_object_vars($this->request()->getFiles()),
-                                        )
-                                    );
+                                    )
+                                );
                             } elseif (is_subclass_of($type->getName(), IRequestWrapper::class)) {
                                 $rc = new \ReflectionClass($type->getName());
                                 $tmp = $rc->newInstance($this->request());
@@ -291,26 +292,30 @@ class App implements IEventEmitter
     private function run($module)
     {
         try {
-            $this->raise(new class($this, $this->request()->getPath(), $module)
-                extends AppUseEvent {
+            $this->raise(
+                new class ($this, $this->request()->getPath(), $module) extends AppUseEvent
+                {
                     public function __construct(App $app, $route, $module)
                     {
                         parent::__construct($app, $route, $module);
                     }
-            });
+                }
+            );
             try {
                 $result = $this->call($module);
                 if ($this->response()->isSendable($result)) {
                     $this->response()->send($result);
                 }
             } catch (\Throwable $e) {
-                $this->raise(new class($this, $e)
-                    extends AppErrorEvent {
+                $this->raise(
+                    new class ($this, $e) extends AppErrorEvent
+                    {
                         public function __construct(App $app, \Throwable $e)
                         {
                             parent::__construct($app, $e);
                         }
-                });
+                    }
+                );
                 throw $e;
             }
         } catch (NotFoundException $e) {
@@ -577,11 +582,15 @@ class App implements IEventEmitter
     
     public function exit()
     {
-        $this->raise(new class($this) extends AppEvent {
-            public function __construct(App $app) {
-                parent::__construct(AppEvent::EXIT, $app);
+        $this->raise(
+            new class ($this) extends AppEvent
+            {
+                public function __construct(App $app)
+                {
+                    parent::__construct(AppEvent::EXIT, $app);
+                }
             }
-        });
+        );
         exit();
     }
 }

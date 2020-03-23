@@ -53,6 +53,6 @@ abstract class Event implements IEvent
 
     public function mark(string $marker)
     {
-        $this->marks[$marker] = true;   
+        $this->marks[$marker] = true;
     }
 }

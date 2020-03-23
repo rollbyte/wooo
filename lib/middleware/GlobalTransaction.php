@@ -12,8 +12,7 @@ class GlobalTransaction
     public static function handler()
     {
         return function (App $app) {
-            $app->on(AppEvent::USE, function (IEvent $event, array $data, TransactionManager $tm)
-            {
+            $app->on(AppEvent::USE, function (IEvent $event, array $data, TransactionManager $tm) {
                 if ($event->hasMark('global-transaction-begin')) {
                     return;
                 }
@@ -21,8 +20,7 @@ class GlobalTransaction
                 $tm->begin();
             });
 
-            $app->on(AppEvent::ERROR, function (IEvent $event, array $data, TransactionManager $tm)
-            {
+            $app->on(AppEvent::ERROR, function (IEvent $event, array $data, TransactionManager $tm) {
                 if ($event->hasMark('global-transaction-rollback')) {
                     return;
                 }
@@ -30,8 +28,7 @@ class GlobalTransaction
                 $tm->rollback();
             });
             
-            $app->on(AppEvent::EXIT, function (IEvent $event, array $data, TransactionManager $tm)
-            {
+            $app->on(AppEvent::EXIT, function (IEvent $event, array $data, TransactionManager $tm) {
                 if ($event->hasMark('global-transaction-commit')) {
                     return;
                 }

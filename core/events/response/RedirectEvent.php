@@ -14,5 +14,5 @@ class RedirectEvent extends ResponseEvent
     public function url()
     {
         return $this->data['url'];
-    }    
+    }
 }

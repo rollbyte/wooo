@@ -17,7 +17,7 @@ trait EventEmitter
         ];
     }
     
-    protected abstract function callEventHandler(IEvent $event, callable $handler, array $data = []);
+    abstract protected function callEventHandler(IEvent $event, callable $handler, array $data = []);
     
     protected function raise(IEvent $event)
     {

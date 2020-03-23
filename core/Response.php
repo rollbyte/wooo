@@ -60,7 +60,7 @@ class Response implements IEventEmitter
             $url = '/' . $url;
         }
         $appBase = $this->app->appBase();
-        $this->raise(new class($this, "$appBase$url") extends RedirectEvent {
+        $this->raise(new class ($this, "$appBase$url") extends RedirectEvent {
             public function __construct(Response $r, string $url)
             {
                 parent::__construct($r, $url);
@@ -72,7 +72,7 @@ class Response implements IEventEmitter
   
     public function render(string $path, array $data = [])
     {
-        $this->raise(new class($this, $path, $data) extends RenderEvent {
+        $this->raise(new class ($this, $path, $data) extends RenderEvent {
             public function __construct(Response $r, string $tpl, array $vars)
             {
                 parent::__construct($r, $tpl, $vars);
@@ -99,7 +99,7 @@ class Response implements IEventEmitter
   
     public function send($data)
     {
-        $this->raise(new class($this, $data) extends SendEvent {
+        $this->raise(new class ($this, $data) extends SendEvent {
             public function __construct(Response $r, $data)
             {
                 parent::__construct($r, $data);

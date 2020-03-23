@@ -14,5 +14,5 @@ class AppErrorEvent extends AppEvent
     public function error(): \Throwable
     {
         return $this->data['error'];
-    }    
+    }
 }
