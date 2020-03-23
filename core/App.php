@@ -6,9 +6,16 @@ use wooo\core\exceptions\NotFoundException;
 use wooo\core\exceptions\AccessDeniedException;
 use wooo\core\exceptions\InternalException;
 use wooo\core\exceptions\CoreException;
+use wooo\core\events\EventEmitter;
+use wooo\core\events\IEventEmitter;
+use wooo\core\events\IEvent;
+use wooo\core\events\app\AppUseEvent;
+use wooo\core\events\app\AppEvent;
+use wooo\core\events\app\AppErrorEvent;
 
-class App
+class App implements IEventEmitter
 {
+    use EventEmitter;
     /**
      * @var \wooo\core\Config
      */
@@ -162,6 +169,11 @@ class App
             }
         }
     }
+    
+    protected function callEventHandler(IEvent $event, callable $handler, array $data = [])
+    {
+        return $this->call($handler, [$event, $data]);
+    }
   
     public function log(ILog $log): App
     {
@@ -186,98 +198,120 @@ class App
         }
         $this->sysLog()->error($e);
     }
+    
+    private function call($module, array $args = [])
+    {
+        $reflection = new \ReflectionFunction($module);
+        $params = array_slice($reflection->getParameters(), count($args), null, false);
+        /**
+         * @var $param \ReflectionParameter
+         */
+        foreach ($params as $param) {
+            $type = $param->getType();
+            $name = $param->getName();
+            if ($type && !$type->isBuiltin()) {
+                if ($type instanceof \ReflectionNamedType) {
+                    switch ($type->getName()) {
+                        case App::class:
+                            $tmp = $this;
+                            break;
+                        case Config::class:
+                            $tmp = $this->config();
+                            break;
+                        case Scope::class:
+                            $tmp = $this->scope();
+                            break;
+                        case Request::class:
+                            $tmp = $this->request();
+                            break;
+                        case Response::class:
+                            $tmp = $this->response();
+                            break;
+                        case Session::class:
+                            if ($this->request()) {
+                                $tmp = $this->request()->session();
+                            }
+                            break;
+                        case \DateTime::class:
+                        case DateTime::class:
+                            if (isset($this->request()->$name)) {
+                                $tmp = new DateTime($this->request()->$name);
+                            }
+                            break;
+                        default:
+                            if (is_subclass_of($type->getName(), IRequestDataWrapper::class)) {
+                                $rc = new \ReflectionClass($type->getName());
+                                $tmp = $rc->newInstance(
+                                    (object)array_merge(
+                                        get_object_vars($this->request()->getBody()),
+                                        get_object_vars($this->request()->getParameters()),
+                                        get_object_vars($this->request()->getQuery()),
+                                        get_object_vars($this->request()->getFiles()),
+                                        )
+                                    );
+                            } elseif (is_subclass_of($type->getName(), IRequestWrapper::class)) {
+                                $rc = new \ReflectionClass($type->getName());
+                                $tmp = $rc->newInstance($this->request());
+                            } else {
+                                $tmp = $this->scope()->get($type->getName());
+                            }
+                            break;
+                    }
+                }
+            } elseif (isset($this->request()->$name)) {
+                $tmp = $this->request()->$name;
+                if ($type) {
+                    if ($type instanceof \ReflectionNamedType) {
+                        switch ($type->getName()) {
+                            case 'string':
+                                $tmp = strval($tmp);
+                                break;
+                            case 'int':
+                                $tmp = intval($tmp);
+                                break;
+                            case 'float':
+                                $tmp = floatval($tmp);
+                                break;
+                            case 'bool':
+                                $tmp = boolval($tmp);
+                                break;
+                        }
+                    }
+                }
+            }
+            if (!isset($tmp) && !$param->isDefaultValueAvailable() && !$param->allowsNull()) {
+                throw new CoreException(CoreException::INVALID_HANDLER_ARGUMENT, [$name]);
+            }
+            $args[] = $tmp ?? ($param->isDefaultValueAvailable() ? $param->getDefaultValue() : null);
+            $tmp = null;
+        }
+        return $reflection->invokeArgs($args);
+    }
   
     private function run($module)
     {
         try {
-            $reflection = new \ReflectionFunction($module);
-            $params = $reflection->getParameters();
-            $args = [];
-            /**
-             * @var $param \ReflectionParameter
-             */
-            foreach ($params as $param) {
-                $type = $param->getType();
-                $name = $param->getName();
-                if ($type && !$type->isBuiltin()) {
-                    if ($type instanceof \ReflectionNamedType) {
-                        switch ($type->getName()) {
-                            case App::class:
-                                $tmp = $this;
-                                break;
-                            case Config::class:
-                                $tmp = $this->config();
-                                break;
-                            case Scope::class:
-                                $tmp = $this->scope();
-                                break;
-                            case Request::class:
-                                $tmp = $this->request();
-                                break;
-                            case Response::class:
-                                $tmp = $this->response();
-                                break;
-                            case Session::class:
-                                if ($this->request()) {
-                                    $tmp = $this->request()->session();
-                                }
-                                break;
-                            case \DateTime::class:
-                            case DateTime::class:
-                                if (isset($this->request()->$name)) {
-                                    $tmp = new DateTime($this->request()->$name);
-                                }
-                                break;
-                            default:
-                                if (is_subclass_of($type->getName(), IRequestDataWrapper::class)) {
-                                    $rc = new \ReflectionClass($type->getName());
-                                    $tmp = $rc->newInstance(
-                                        (object)array_merge(
-                                            get_object_vars($this->request()->getBody()),
-                                            get_object_vars($this->request()->getParameters()),
-                                            get_object_vars($this->request()->getQuery()),
-                                            get_object_vars($this->request()->getFiles()),
-                                        )
-                                    );
-                                } elseif (is_subclass_of($type->getName(), IRequestWrapper::class)) {
-                                    $rc = new \ReflectionClass($type->getName());
-                                    $tmp = $rc->newInstance($this->request());
-                                } else {
-                                    $tmp = $this->scope()->get($type->getName());
-                                }
-                                break;
-                        }
+            $this->raise(new class($this, $this->request()->getPath(), $module)
+                extends AppUseEvent {
+                    public function __construct(App $app, $route, $module)
+                    {
+                        parent::__construct($app, $route, $module);
                     }
-                } elseif (isset($this->request()->$name)) {
-                    $tmp = $this->request()->$name;
-                    if ($type) {
-                        if ($type instanceof \ReflectionNamedType) {
-                            switch ($type->getName()) {
-                                case 'string':
-                                    $tmp = strval($tmp);
-                                    break;
-                                case 'int':
-                                    $tmp = intval($tmp);
-                                    break;
-                                case 'float':
-                                    $tmp = floatval($tmp);
-                                    break;
-                                case 'bool':
-                                    $tmp = boolval($tmp);
-                                    break;
-                            }
+            });
+            try {
+                $result = $this->call($module);
+                if ($this->response()->isSendable($result)) {
+                    $this->response()->send($result);
+                }
+            } catch (\Throwable $e) {
+                $this->raise(new class($this, $e)
+                    extends AppErrorEvent {
+                        public function __construct(App $app, \Throwable $e)
+                        {
+                            parent::__construct($app, $e);
                         }
-                    }
-                }
-                if (!isset($tmp) && !$param->isDefaultValueAvailable() && !$param->allowsNull()) {
-                    throw new CoreException(CoreException::INVALID_HANDLER_ARGUMENT, [$name]);
-                }
-                $args[] = $tmp ?? ($param->isDefaultValueAvailable() ? $param->getDefaultValue() : null);
-                $tmp = null;
-            }
-            $result = $reflection->invokeArgs($args);
-            if ($this->response()->isSendable($result)) {
-                $this->response()->send($result);
+                });
+                throw $e;
             }
         } catch (NotFoundException $e) {
             $this->response()->setStatus(404)->send($e->getMessage());
@@ -370,6 +404,7 @@ class App
             if (is_string($module)) {
                 $module = include $module;
             }
+            
             if ($module instanceof Router) {
                 if (empty($paths)) {
                     $this->runRouter('', $module);
@@ -538,5 +573,15 @@ class App
     public function notFound()
     {
         $this->response()->setStatus(404)->send("Resource not found!");
+    }
+    
+    public function exit()
+    {
+        $this->raise(new class($this) extends AppEvent {
+            public function __construct(App $app) {
+                parent::__construct(AppEvent::EXIT, $app);
+            }
+        });
+        exit();
     }
 }

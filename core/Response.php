@@ -3,9 +3,18 @@
 namespace wooo\core;
 
 use wooo\core\stream\IReadableStream;
+use wooo\core\events\IEvent;
+use wooo\core\events\IEventEmitter;
+use wooo\core\events\EventEmitter;
+use wooo\core\events\response\RenderEvent;
+use wooo\core\events\Event;
+use wooo\core\events\response\SendEvent;
+use wooo\core\events\response\RedirectEvent;
 
-class Response
+class Response implements IEventEmitter
 {
+    use EventEmitter;
+    
     private $variables = [];
     
     private $app;
@@ -51,12 +60,24 @@ class Response
             $url = '/' . $url;
         }
         $appBase = $this->app->appBase();
+        $this->raise(new class($this, "$appBase$url") extends RedirectEvent {
+            public function __construct(Response $r, string $url)
+            {
+                parent::__construct($r, $url);
+            }
+        });
         header("Location: $appBase$url", true, 302);
-        exit();
+        $this->app->exit();
     }
   
     public function render(string $path, array $data = [])
     {
+        $this->raise(new class($this, $path, $data) extends RenderEvent {
+            public function __construct(Response $r, string $tpl, array $vars)
+            {
+                parent::__construct($r, $tpl, $vars);
+            }
+        });
         if ($this->engine) {
             $this->engine->render($path, array_merge($data, $this->variables));
         } else {
@@ -68,7 +89,7 @@ class Response
             }
             include $path;
         }
-        exit();
+        $this->app->exit();
     }
     
     public function isSendable($data)
@@ -78,6 +99,12 @@ class Response
   
     public function send($data)
     {
+        $this->raise(new class($this, $data) extends SendEvent {
+            public function __construct(Response $r, $data)
+            {
+                parent::__construct($r, $data);
+            }
+        });
         if (is_resource($data)) {
             while (false !== ($chunk = fgetc($data))) {
                 echo $chunk;
@@ -96,7 +123,7 @@ class Response
         } elseif (!is_null($data)) {
             echo strval($data);
         }
-        exit();
+        $this->app->exit();
     }
   
     public function setStatus($status): Response
@@ -150,5 +177,10 @@ class Response
     {
         header($header);
         return $this;
+    }
+    
+    protected function callEventHandler(IEvent $event, callable $handler, array $data = [])
+    {
+        return $handler($event, $data);
     }
 }
