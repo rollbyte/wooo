@@ -2,7 +2,8 @@
 
 namespace wooo\core;
 
-abstract class HttpMethod {
+abstract class HttpMethod
+{
     public const GET = 'GET';
     public const POST = 'POST';
     public const DELETE = 'DELETE';
