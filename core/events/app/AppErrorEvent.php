@@ -8,7 +8,7 @@ class AppErrorEvent extends AppEvent
 {
     protected function __construct(App $app, \Throwable $e)
     {
-        parent::__construct(AppEvent::USE, $app, ['error' => $e]);
+        parent::__construct(AppEvent::ERROR, $app, ['error' => $e]);
     }
     
     public function error(): \Throwable

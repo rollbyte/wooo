@@ -7,7 +7,6 @@ use wooo\core\events\IEvent;
 use wooo\core\events\IEventEmitter;
 use wooo\core\events\EventEmitter;
 use wooo\core\events\response\RenderEvent;
-use wooo\core\events\Event;
 use wooo\core\events\response\SendEvent;
 use wooo\core\events\response\RedirectEvent;
 
@@ -17,6 +16,9 @@ class Response implements IEventEmitter
     
     private $variables = [];
     
+    /**
+     * @var App
+     */
     private $app;
     
     private $engine;

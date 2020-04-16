@@ -35,7 +35,7 @@ class GlobalTransaction
                 if ($event->hasMark('global-transaction-rollback')) {
                     return;
                 }
-                if ($tm->rollback()) {
+                if ($tm->inTransaction() && $tm->rollback()) {
                     $event->mark('global-transaction-rollback');
                 }
             });
@@ -44,7 +44,7 @@ class GlobalTransaction
                 if ($event->hasMark('global-transaction-commit')) {
                     return;
                 }
-                if ($tm->commit()) {
+                if ($tm->inTransaction() && $tm->commit()) {
                     $event->mark('global-transaction-commit');
                 }
             });
