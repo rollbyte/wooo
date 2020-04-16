@@ -14,6 +14,8 @@ class TransactionManager implements ITransactional
     
     private $log;
     
+    private $inTransaction = false;
+    
     public function __construct(ILog $log)
     {
         $this->log = $log;
@@ -26,26 +28,36 @@ class TransactionManager implements ITransactional
         }
     }
     
-    public function rollback(): void
+    public function rollback(): bool
     {
-        foreach ($this->transactions as $t) {
-            try {
-                $t->rollback();
-            } catch (\Exception $e) {
-                $this->log->error($e);
+        if ($this->inTransaction) {
+            foreach ($this->transactions as $t) {
+                try {
+                    $t->rollback();
+                } catch (\Exception $e) {
+                    $this->log->error($e);
+                }
             }
+            $this->inTransaction = false;
+            return true;
         }
+        return false;
     }
 
-    public function commit(): void
+    public function commit(): bool
     {
-        foreach ($this->transactions as $t) {
-            try {
-                $t->commit();
-            } catch (\Exception $e) {
-                $this->log->error($e);
+        if ($this->inTransaction) {
+            foreach ($this->transactions as $t) {
+                try {
+                    $t->commit();
+                } catch (\Exception $e) {
+                    $this->log->error($e);
+                }
             }
+            $this->inTransaction = false;
+            return true;
         }
+        return false;
     }
 
     public function begin(): void
@@ -53,5 +65,6 @@ class TransactionManager implements ITransactional
         foreach ($this->transactions as $t) {
             $t->begin();
         }
+        $this->inTransaction = true;
     }
 }

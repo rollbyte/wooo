@@ -268,22 +268,27 @@ class PDODriver implements wooo\DbDriver
         }
     }
   
-    public function commit(): void
+    public function commit(): bool
     {
+        $result = false;
         if ($this->connection && $this->connection->inTransaction()) {
             if ($this->transaction_level < 2) {
                 $this->connection->commit();
+                $result = true;
             }
             $this->transaction_level--;
         }
+        return $result;
     }
   
-    public function rollback(): void
+    public function rollback(): bool
     {
         if ($this->connection && $this->connection->inTransaction()) {
             $this->connection->rollback();
             $this->transaction_level--;
+            return true;
         }
+        return false;
     }
   
     public function scalar(string $q, array $params = [], ?string $type = null)

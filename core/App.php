@@ -503,8 +503,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['GET'],
-                $this->forceMethod('GET', func_get_args())
+                [HttpMethod::GET],
+                $this->forceMethod(HttpMethod::GET, func_get_args())
             )
         );
     }
@@ -514,8 +514,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['POST'],
-                $this->forceMethod('POST', func_get_args())
+                [HttpMethod::POST],
+                $this->forceMethod(HttpMethod::POST, func_get_args())
             )
         );
     }
@@ -525,8 +525,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['DELETE'],
-                $this->forceMethod('DELETE', func_get_args())
+                [HttpMethod::DELETE],
+                $this->forceMethod(HttpMethod::DELETE, func_get_args())
             )
         );
     }
@@ -536,8 +536,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['PUT'],
-                $this->forceMethod('PUT', func_get_args())
+                [HttpMethod::PUT],
+                $this->forceMethod(HttpMethod::PUT, func_get_args())
             )
         );
     }
@@ -547,8 +547,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['PATCH'],
-                $this->forceMethod('PATCH', func_get_args())
+                [HttpMethod::PATCH],
+                $this->forceMethod(HttpMethod::PATCH, func_get_args())
             )
         );
     }
@@ -558,8 +558,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['HEAD'],
-                $this->forceMethod('HEAD', func_get_args())
+                [HttpMethod::HEAD],
+                $this->forceMethod(HttpMethod::HEAD, func_get_args())
             )
         );
     }
@@ -569,8 +569,8 @@ class App implements IEventEmitter
         return call_user_func_array(
             [$this, 'use'],
             array_merge(
-                ['SEARCH'],
-                $this->forceMethod('SEARCH', func_get_args())
+                [HttpMethod::SEARCH],
+                $this->forceMethod(HttpMethod::SEARCH, func_get_args())
             )
         );
     }
