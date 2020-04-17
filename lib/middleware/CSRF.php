@@ -32,7 +32,7 @@ class CSRF
                     $app->response()->setStatus(403)->send('Access denied.');
                 }
                 
-                $reqToken = new Token(base64_decode($app->request()->Token));
+                $reqToken = new Token(base64_decode($reqToken));
                 if (!hash_equals($token->value(), $reqToken->value())) {
                     $app->response()->setStatus(403)->send('Access denied.');
                 }
