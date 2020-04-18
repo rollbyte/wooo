@@ -145,7 +145,7 @@ class CSRFTest extends TestCase
         
         $token = null;
         $app->use(function (App $app) use (&$token) {
-            $token = $app->request()->session()->get('csrf_token');
+            $token = base64_decode($app->request()->session()->get('csrf_token'));
         });
         $this->assertNotNull($token, 'csrf sess setting check failed');
 
