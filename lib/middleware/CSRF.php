@@ -4,6 +4,7 @@ namespace wooo\lib\middleware;
 
 use wooo\core\Token;
 use wooo\core\App;
+use wooo\core\HttpMethod;
 
 class CSRF
 {
@@ -14,6 +15,7 @@ class CSRF
             $cookie = $app->config()->get('csrfCookie', $cookie);
             
             $token = $cookie ? $app->request()->getCookie($paramName) : $app->request()->session()->get($paramName);
+
             if (!$token) {
                 $token = new Token();
                 if ($cookie) {
@@ -21,12 +23,14 @@ class CSRF
                 } else {
                     $app->request()->session()->set($paramName, $token->value());
                 }
+            } else {
+                $token = new Token($token, false);
             }
             
-            if (!in_array($app->request()->getMethod(), ['GET', 'SEARCH', 'HEAD'])) {
+            if (HttpMethod::isWriting($app->request()->getMethod())) {
                 $reqToken = $app->request()->getHeader($paramName);
                 if (!$reqToken) {
-                    $reqToken = $app->request()->getBody()->$paramName;
+                    $reqToken = $app->request()->getBody()->$paramName ?? null;
                 }
                 if (!$reqToken) {
                     $app->response()->setStatus(403)->send('Access denied.');

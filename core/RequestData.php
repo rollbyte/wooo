@@ -9,18 +9,16 @@ class RequestData extends stdClass implements ArrayAccess
 {
     private static function acceptValue($value, $urldecode = false)
     {
-        if (get_magic_quotes_gpc()) {
-            if (is_array($value)) {
-                array_walk_recursive(
-                    $value,
-                    function (&$item, $key, $urldecode) {
-                        $item = stripslashes($urldecode ? rawurldecode($item) : $item);
-                    },
-                    $urldecode
-                );
-            } else {
-                $value = stripslashes($urldecode ? rawurldecode($value) : $value);
-            }
+        if (is_array($value)) {
+            array_walk_recursive(
+                $value,
+                function (&$item, $key, $urldecode) {
+                    $item = $urldecode ? rawurldecode($item) : $item;
+                },
+                $urldecode
+            );
+        } else {
+            $value = $urldecode ? rawurldecode($value) : $value;
         }
         if (!is_null($value)) {
             return $value;

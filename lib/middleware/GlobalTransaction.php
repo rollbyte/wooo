@@ -21,11 +21,7 @@ class GlobalTransaction
                  * @var \wooo\core\App $app
                  */
                 $app = $event->emitter();
-                if (
-                    $app->request()->getMethod() !== HttpMethod::GET &&
-                    $app->request()->getMethod() !== HttpMethod::HEAD &&
-                    $app->request()->getMethod() !== HttpMethod::SEARCH
-                ) {
+                if (HttpMethod::isWriting($app->request()->getMethod())) {
                     $event->mark('global-transaction-begin');
                     $tm->begin();
                 }

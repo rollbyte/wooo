@@ -187,7 +187,7 @@ class Request
     public function getCookie($nm): ?string
     {
         if (isset($_COOKIE[$nm])) {
-            $v = $this->acceptValue($_COOKIE[$nm]);
+            $v = $_COOKIE[$nm];
             if ($v) {
                 if ($key = $this->app->config()->get('cookieValidationKey', false)) {
                     $v = base64_decode($v);

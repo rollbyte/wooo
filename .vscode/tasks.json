@@ -1,0 +1,23 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "code snyffer",
+      "type": "shell",
+      "command": "vendor/bin/phpcs --standard=PSR1,PSR12 core lib",
+      "problemMatcher": []
+    },
+    {
+      "label": "unit tests",
+      "type": "shell",
+      "command" : "vendor/bin/phpunit",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
+}

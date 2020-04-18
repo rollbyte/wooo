@@ -11,4 +11,23 @@ abstract class HttpMethod
     public const PATCH = 'PATCH';
     public const HEAD = 'HEAD';
     public const SEARCH = 'SEARCH';
+    public const OPTIONS = 'OPTIONS';
+
+    public static function isReading($method): bool
+    {
+        return
+            $method === self::GET ||
+            $method === self::SEARCH ||
+            $method === self::HEAD ||
+            $method === self::OPTIONS;
+    }
+
+    public static function isWriting($method): bool
+    {
+        return
+            $method === self::POST ||
+            $method === self::PUT ||
+            $method === self::PATCH ||
+            $method === self::DELETE;
+    }
 }

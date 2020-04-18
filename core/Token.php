@@ -8,7 +8,7 @@ class Token
 {
     private $value;
     
-    public function __construct($param)
+    public function __construct($param = null, $masked = true)
     {
         if (!$param) {
             $param = 32;
@@ -16,12 +16,16 @@ class Token
         if (is_int($param)) {
             $this->value = random_bytes($param);
         } elseif (is_string($param)) {
-            $len = mb_strlen($param, '8bit');
-            if ($len % 2 == 1) {
-                throw new CoreException(CoreException::INVALID_MASKED_TOKEN_VALUE);
+            if ($masked) {
+                $len = mb_strlen($param, '8bit');
+                if ($len % 2 == 1) {
+                    throw new CoreException(CoreException::INVALID_MASKED_TOKEN_VALUE);
+                }
+                $len  = $len / 2;
+                $this->value = mb_substr($param, $len, $len, '8bit') ^ mb_substr($param, 0, $len, '8bit');
+            } else {
+                $this->value = $param;
             }
-            $len  = $len / 2;
-            $this->value = mb_substr($param, $len, $len, '8bit') ^ mb_substr($param, 0, $len, '8bit');
         } else {
             throw new CoreException(CoreException::INVALID_TOKEN_LENGTH);
         }
