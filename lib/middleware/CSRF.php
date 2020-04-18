@@ -16,9 +16,9 @@ class CSRF
             $cookie = $app->config()->get('csrfCookie', $cookie);
             $timeout = $app->config()->get('csrfTimeout', $timeout);
             
-            $token = $cookie ?
+            $token = base64_decode($cookie ?
                 $app->request()->getCookie($paramName) :
-                $app->request()->session()->get($paramName);
+                $app->request()->session()->get($paramName));
 
             if ($timeout) {
                 $expDate = $cookie ?
@@ -37,9 +37,9 @@ class CSRF
             if (!$token) {
                 $token = new Token();
                 if ($cookie) {
-                    $app->response()->setCookie($paramName, $token->value());
+                    $app->response()->setCookie($paramName, base64_encode($token->value()));
                 } else {
-                    $app->request()->session()->set($paramName, $token->value());
+                    $app->request()->session()->set($paramName, base64_encode($token->value()));
                 }
                 if ($timeout) {
                     if ($cookie) {
@@ -56,7 +56,7 @@ class CSRF
             $app->response()->csrf_token_name = $paramName;
             $app->response()->csrf_token_value = $base64token;
             $app->response()->setHeader('csrf-token-name: ' . $paramName);
-            $app->response()->setHeader('csrf-token-value: ' . $base64token);            
+            $app->response()->setHeader('csrf-token-value: ' . $base64token);
             
             if (HttpMethod::isWriting($app->request()->getMethod())) {
                 $reqToken = $app->request()->getHeader($paramName);
