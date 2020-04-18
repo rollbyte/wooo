@@ -51,6 +51,12 @@ class CSRF
             } else {
                 $token = new Token($token, false);
             }
+
+            $base64token = base64_encode($token->masked());
+            $app->response()->csrf_token_name = $paramName;
+            $app->response()->csrf_token_value = $base64token;
+            $app->response()->setHeader('csrf-token-name: ' . $paramName);
+            $app->response()->setHeader('csrf-token-value: ' . $base64token);            
             
             if (HttpMethod::isWriting($app->request()->getMethod())) {
                 $reqToken = $app->request()->getHeader($paramName);
@@ -66,12 +72,6 @@ class CSRF
                     $app->response()->setStatus(403)->send('Access denied.');
                 }
             }
-            
-            $base64token = base64_encode($token->masked());
-            $app->response()->csrf_token_name = $paramName;
-            $app->response()->csrf_token_value = $base64token;
-            $app->response()->setHeader('csrf-token-name: ' . $paramName);
-            $app->response()->setHeader('csrf-token-value: ' . $base64token);
         };
     }
 }
