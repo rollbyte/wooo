@@ -4,17 +4,35 @@ namespace wooo\lib\middleware;
 
 use wooo\core\Token;
 use wooo\core\App;
+use wooo\core\DateTime;
 use wooo\core\HttpMethod;
 
 class CSRF
 {
-    public static function handler(string $paramName = 'csrf_token_value', $cookie = false)
+    public static function handler(string $paramName = 'csrf_token_value', $cookie = false, $timeout = null)
     {
-        return function (App $app) use ($paramName, $cookie) {
+        return function (App $app) use ($paramName, $cookie, $timeout) {
             $paramName = $app->config()->get('csrfTokenName', $paramName);
             $cookie = $app->config()->get('csrfCookie', $cookie);
+            $timeout = $app->config()->get('csrfTimeout', $timeout);
             
-            $token = $cookie ? $app->request()->getCookie($paramName) : $app->request()->session()->get($paramName);
+            $token = $cookie ?
+                $app->request()->getCookie($paramName) :
+                $app->request()->session()->get($paramName);
+
+            if ($timeout) {
+                $expDate = $cookie ?
+                    $app->request()->getCookie($paramName . '_expires') :
+                    $app->request()->session()->get($paramName . '_expires');
+                if (!$expDate) {
+                    $token = null;
+                } else {
+                    $expDate = new DateTime(intval($expDate));
+                    if ($expDate->getTimestamp() < time()) {
+                        $token  = null;
+                    }
+                }
+            }
 
             if (!$token) {
                 $token = new Token();
@@ -22,6 +40,13 @@ class CSRF
                     $app->response()->setCookie($paramName, $token->value());
                 } else {
                     $app->request()->session()->set($paramName, $token->value());
+                }
+                if ($timeout) {
+                    if ($cookie) {
+                        $app->response()->setCookie($paramName . '_dt', time() + $timeout);
+                    } else {
+                        $app->request()->session()->set($paramName . '_dt', time() + $timeout);
+                    }
                 }
             } else {
                 $token = new Token($token, false);
