@@ -26,7 +26,7 @@ class CSRFTest extends TestCase
     
     private static $__COOKIES = [];
 
-    private const CSRF_PARAM = 'csrf_token';
+    private const CSRF_PARAM = 'CSRF-Token';
     
     private function init(): App
     {

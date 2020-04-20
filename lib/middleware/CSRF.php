@@ -54,7 +54,7 @@ class CSRF
         }
     }
 
-    public static function handler(string $paramName = 'csrf_token_value', $cookie = false, $timeout = null)
+    public static function handler(string $paramName = 'csrf-token-value', $cookie = false, $timeout = null)
     {
         return function (App $app) use ($paramName, $cookie, $timeout) {
             $paramName = $app->config()->get('csrfTokenName', $paramName);
