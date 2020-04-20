@@ -25,9 +25,15 @@ class CSRFTest extends TestCase
     private static $__HEADERS = [];
     
     private static $__COOKIES = [];
+
+    private const CSRF_PARAM = 'csrf_token';
     
     private function init(): App
     {
+        self::$__HEADERS = [];
+        self::$__SESSION = [];
+        self::$__CONFIG = [];
+        self::$__COOKIES = [];
         $config = $this->getMockBuilder(Config::class)
             ->disableOriginalConstructor()
             ->setMethods(['set', 'get'])
@@ -141,11 +147,11 @@ class CSRFTest extends TestCase
     {
         $app = $this->init();
         $app->request()->http_method = HttpMethod::GET;
-        $app->use(CSRF::handler('csrf_token'));
+        $app->use(CSRF::handler(self::CSRF_PARAM));
         
         $token = null;
         $app->use(function (App $app) use (&$token) {
-            $token = base64_decode($app->request()->session()->get('csrf_token'));
+            $token = base64_decode($app->request()->session()->get(self::CSRF_PARAM));
         });
         $this->assertNotNull($token, 'csrf sess setting check failed');
 
@@ -163,9 +169,9 @@ class CSRFTest extends TestCase
     {
         $app = $this->init();
         $app->request()->http_method = HttpMethod::GET;
-        $app->use(CSRF::handler('csrf_token'));
+        $app->use(CSRF::handler(self::CSRF_PARAM));
         $app->request()->http_method = HttpMethod::POST;
-        $app->use(CSRF::handler('csrf_token'));
+        $app->use(CSRF::handler(self::CSRF_PARAM));
         $this->assertEquals(403, $app->response()->http_status);
     }
     
@@ -173,13 +179,23 @@ class CSRFTest extends TestCase
     {
         $app = $this->init();
         $app->request()->http_method = HttpMethod::GET;
-        $app->use(CSRF::handler('csrf_token'));
+        $app->use(CSRF::handler(self::CSRF_PARAM, false, 300));
         $token = $app->response()->csrf_token_value;
-            
+        $htoken = trim(explode(':', self::$__HEADERS[1])[1]);
+
         $app->request()->http_method = HttpMethod::POST;
-        $app->request()->getBody()['csrf_token'] = $token;
-        
-        $app->use(CSRF::handler('csrf_token'));
-        $this->assertEquals(200, $app->response()->http_status);
+        $app->request()->getBody()[self::CSRF_PARAM] = $token;
+        $app->use(CSRF::handler(self::CSRF_PARAM, false, 300));
+        $this->assertEquals(200, $app->response()->http_status, 'passing by body param check failed');
+
+        $app->request()->getBody()->offsetUnset(self::CSRF_PARAM);
+        $_SERVER['HTTP_CSRF_TOKEN'] = $htoken;
+        $app->use(CSRF::handler(self::CSRF_PARAM, false, 300));
+        $this->assertEquals(200, $app->response()->http_status, 'passing by header check failed');
+
+        $htoken = trim(explode(':', self::$__HEADERS[1])[1]);
+        $_SERVER['HTTP_CSRF_TOKEN'] = $htoken;
+        $app->use(CSRF::handler(self::CSRF_PARAM, false, 1));
+        $this->assertEquals(200, $app->response()->http_status, 'token renew check failed');
     }
 }
