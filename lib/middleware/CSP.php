@@ -20,7 +20,7 @@ class CSP
             if ($item === 'nonce-') {
                 $nonce = bin2hex(random_bytes(10));
                 self::$NONCES[] = $nonce;
-                $item = 'nonce-' . $nonce;
+                $item = "'nonce-$nonce'";
             }
             $result[] = $item;
         });
