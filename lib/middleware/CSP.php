@@ -31,7 +31,11 @@ class CSP
     {
         return function (App $app) use ($config) {
             if (!$app->request()->isAjax()) {
-                $value = array_merge_recursive(['default-src' => ['\'self\'']], $app->config()->get('CSP', []), $config);
+                $value = array_merge_recursive(
+                    ['default-src' => ['\'self\'']],
+                    $app->config()->get('CSP', []),
+                    $config
+                );
                 $app->response()->setHeader('Content-Security-Policy: ' . self::serializeValue($value));
             }
         };
