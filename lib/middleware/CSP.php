@@ -11,17 +11,20 @@ class CSP
 
     private static function serializeValue(array $value, $level = 0)
     {
-        return implode($level > 0 ? ' ' : ';', array_map(function ($item) use ($level) {
+        $result = [];
+        array_walk($value, function ($item, $nm) use (&$result, $level) {
             if (is_array($item)) {
-                return self::serializeValue($item, $level + 1);
+                $result[] = $nm . ': ' . self::serializeValue($item, $level + 1);
+                return;
             }
             if ($item === 'nonce-') {
                 $nonce = bin2hex(random_bytes(10));
                 self::$NONCES[] = $nonce;
-                return 'nonce-' . $nonce;
+                $item = 'nonce-' . $nonce;
             }
-            return $item;
-        }, $value));
+            $result[] = $item;
+        });
+        return implode($level > 0 ? ' ' : '; ', $result);
     }
 
     public static function handler(array $config = [])
