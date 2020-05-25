@@ -60,35 +60,14 @@ class Image implements IImage
         $s_width = $width ? $width : $orig_width;
         $s_height = $height ? $height : $orig_height;
     
-        $s_o_width = $orig_width;
-        $s_o_height = $orig_height;
-    
         if ($s_width == 0 || $s_height == 0) {
             throw new CoreException(CoreException::INVALID_IMAGE);
         }
     
-        if ($orig_width < $orig_height) {
-            $s_o_width = $orig_width;
-            $s_o_height = floor($s_height * $orig_width / $s_width);
-        } else {
-            $s_o_height = $orig_height;
-            $s_o_width = floor($s_width * $orig_height / $s_height);
-        }
-    
-        $x = 0;
-        $y = 0;
-        if ($s_o_width < $orig_width) {
-            $x = floor(($orig_width - $s_o_width) / 2);
-        }
-    
-        if ($s_o_height < $orig_height) {
-            $y = floor(($orig_height - $s_o_height) / 2);
-        }
-    
-        $image_dest = imagecreatetruecolor($s_width, $s_height);
         $image_src = imagecreatefromstring($data);
-    
-        imagecopyresampled($image_dest, $image_src, 0, 0, $x, $y, $s_width, $s_height, $s_o_width, $s_o_height);
+        $image_dest = imagescale($image_src, $s_width);
+
+        imagesavealpha($image_dest, true);
     
         if (!$dest) {
             ob_start();
