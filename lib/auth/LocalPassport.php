@@ -20,6 +20,8 @@ class LocalPassport implements IPassport
     private $db;
     
     private $tableName = 'user';
+
+    private $idField = [];
   
     public function __construct(DbDriver $db)
     {
@@ -41,8 +43,15 @@ class LocalPassport implements IPassport
      */
     public function authenticate(array $credentials): ?IUser
     {
+        $idf = empty($this->idField) ? ['login'] : $this->idField;
+
+        $where = [];
+        foreach ($idf as $f) {
+            $where[] = $f . ' = :login';
+        }
+
         $u = $this->db->get(
-            "select * from $this->tableName where login = :login and active = 1",
+            "select * from $this->tableName where (" . implode(' or ', $where) . ") and active = 1",
             ['login' => $credentials['login']]
         );
         if ($u) {
