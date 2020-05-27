@@ -36,6 +36,11 @@ class LocalPassport implements IPassport
     {
         $this->tableName = $name;
     }
+
+    public function setIdField(string $fld)
+    {
+        $this->idField[] = $fld;
+    }
     
     /**
      * {@inheritDoc}
@@ -43,7 +48,7 @@ class LocalPassport implements IPassport
      */
     public function authenticate(array $credentials): ?IUser
     {
-        $idf = empty($this->idField) ? ['login'] : $this->idField;
+        $idf = empty($this->idField) ? ['login'] : array_unique($this->idField);
 
         $where = [];
         foreach ($idf as $f) {
