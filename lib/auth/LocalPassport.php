@@ -21,7 +21,7 @@ class LocalPassport implements IPassport
     
     private $tableName = 'user';
 
-    private $idField = [];
+    private $idFields = [];
   
     public function __construct(DbDriver $db)
     {
@@ -37,9 +37,9 @@ class LocalPassport implements IPassport
         $this->tableName = $name;
     }
 
-    public function setIdField(string $fld)
+    public function setIdFields(array $flds)
     {
-        $this->idField[] = $fld;
+        $this->idFields = $flds;
     }
     
     /**
@@ -48,7 +48,7 @@ class LocalPassport implements IPassport
      */
     public function authenticate(array $credentials): ?IUser
     {
-        $idf = empty($this->idField) ? ['login'] : array_unique($this->idField);
+        $idf = empty($this->idFields) ? ['login'] : array_unique($this->idFields);
 
         $where = [];
         foreach ($idf as $f) {
