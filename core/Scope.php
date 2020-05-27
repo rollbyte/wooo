@@ -204,7 +204,7 @@ class Scope implements ContainerInterface
                         $params = $m1->getParameters();
                         if (is_array($v) && $params[0]->getType() == 'array' && $pn == 1) {
                             $m1->invoke($component, $this->parseValue($v));
-                        } if (is_array($v) && $this->isOrdinal($v)) {
+                        } else if (is_array($v) && $this->isOrdinal($v)) {
                             $multicall = true;
                             foreach ($v as $call) {
                                 if (!is_array($call) || !$this->isOrdinal($call)) {
