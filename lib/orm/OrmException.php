@@ -19,6 +19,7 @@ class OrmException extends \Exception
     public const NO_KEY_DATA = 10012;
     public const INVALID_ID = 10013;
     public const INVALID_ATTRIBUTE_VALUE = 10014;
+    public const EMPTY_VALUE = 10015;
     
     private static $messages = [
         self::CREATE_FAILED => '%s class instance creation failed.',
@@ -31,10 +32,11 @@ class OrmException extends \Exception
         self::ATTR_NOT_FOUND => 'Attribute "%s" not found in class "%s".',
         self::QUERY_SYTAX_ERROR => 'Query syntax error.',
         self::INVALID_OPER => 'Unknown operation "%s" specified in expression.',
-        self::NO_DATA_FOR_REF_FIELD => 'No data specified for reference field "%s".',
+        self::NO_DATA_FOR_REF_FIELD => 'No data specified for reference field "%s" in class "%s".',
         self::NO_KEY_DATA => 'Key data was not provided for class "%s".',
         self::INVALID_ID => 'Invalid id "%s" specified for class "%s"',
-        self::INVALID_ATTRIBUTE_VALUE => 'Invalid value specified for attribute "%s"'
+        self::INVALID_ATTRIBUTE_VALUE => 'Invalid value specified for attribute "%s" of class "%s"',
+        self::EMPTY_VALUE => 'Attribute "%s" of class "%s" can not be empty'
     ];
     
     public function __construct($code, $params = [], \Throwable $cause = null)

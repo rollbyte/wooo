@@ -26,6 +26,7 @@ class ClassA {
     
     /**
      * @var string
+     * @orm.required
      */
     public $Name;
     

@@ -1,6 +1,7 @@
 <?php
 namespace wooo\tests;
 
+use Exception;
 use PHPUnit\Framework\TestCase;
 use wooo\lib\dbal\PDODriver;
 use wooo\lib\orm\Mapper;
@@ -13,11 +14,15 @@ use wooo\lib\orm\FO;
 use wooo\lib\orm\AGGREG;
 use wooo\tests\orm\ClassF;
 use wooo\core\DateTime;
+use wooo\lib\orm\OrmException;
 
 class MapperTest extends TestCase
 {
     private static $connection;
     private static $driver;
+    /**
+     * @var Mapper
+     */
     private static $mapper;
     
     public static function setUpBeforeClass(): void
@@ -44,6 +49,21 @@ class MapperTest extends TestCase
         self::$connection->exec('drop table class_d');
         self::$connection->exec('drop table class_e');
         self::$connection->exec('drop table class_f');
+    }
+
+    public function testRequired(): void
+    {
+        $this->expectExceptionObject(new OrmException(OrmException::EMPTY_VALUE, ['Name', ClassA::class]));
+        $d = new \DateTime('20191009');
+        self::$mapper->create(
+            ClassB::class,
+            [
+                'Id' => '00004',
+                'Name' => '',
+                'DateAttr' => $d,
+                'BoolAttr' => true
+            ]
+        );
     }
     
     public function testCreate(): void
@@ -388,8 +408,8 @@ class MapperTest extends TestCase
         self::$mapper->begin();
         try {
             self::$mapper->delete(ClassA::class, 'code2|00002');
-            throw new \Exception('something went wrong');
-        } catch (\Exception $e) {
+            throw new Exception('something went wrong');
+        } catch (Exception $e) {
             self::$mapper->rollback();
         }
         
@@ -399,7 +419,7 @@ class MapperTest extends TestCase
         try {
             self::$mapper->delete(ClassA::class, 'code2|00002');
             self::$mapper->commit();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             self::$mapper->rollback();
         }
         

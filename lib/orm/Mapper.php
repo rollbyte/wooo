@@ -2,6 +2,7 @@
 
 namespace wooo\lib\orm;
 
+use Exception;
 use wooo\lib\dbal\interfaces\DbDriver;
 use wooo\lib\dbal\interfaces\DbCursor;
 use wooo\core\DateTime;
@@ -279,6 +280,10 @@ class Mapper
                                 $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = $matches[1];
                             }
                         }
+
+                        if (preg_match_all('/@orm.required\s*$/m', $pdoc, $matches)) {
+                            $this->ormConfig[$cn]['map'][$p->getName()]['required'] = true;
+                        }                        
                     } else {
                         $this->ormConfig[$cn]['map'][$p->getName()]['fields'] = [];
                     }
@@ -332,7 +337,7 @@ class Mapper
                 $keymeta = $this->propMeta($orm, $k);
                 if (is_object($v) && !($v instanceof \DateTime)) {
                     if (!$keymeta['is_ref']) {
-                        throw new OrmException(OrmException::INVALID_ATTRIBUTE_VALUE, [$k]);
+                        throw new OrmException(OrmException::INVALID_ATTRIBUTE_VALUE, [$k, $cn]);
                     }
                     $kvs = $this->getObjectKey($v);
                     foreach ($kvs as $i => $kv) {
@@ -575,7 +580,7 @@ class Mapper
                 }
             }
         } else {
-            throw new \Exception('Query syntax error!');
+            throw new Exception('Query syntax error!');
         }
     }
   
@@ -1003,11 +1008,12 @@ class Mapper
         return $q;
     }
   
-    private function processData($orm, $data, $cb, $keyData = [])
+    private function processData($orm, $data, $cb, $keyData = [], $forInsertion = false)
     {
         $fldValues = [];
         
-        $processProperty = function ($prop, $fld) use ($data, &$fldValues, $cb, $keyData) {
+        $processProperty = function ($prop, $fld) use ($data, &$fldValues, $cb, $keyData, $orm, $forInsertion) {
+            $required = $fld['required'] ?? false;
             if (array_key_exists($prop, $data) && !$fld['is_array']) {
                 $values = [];
                 $n = count($fld['fields']);
@@ -1016,6 +1022,9 @@ class Mapper
                 } elseif ($fld['is_ref'] && is_object($data[$prop])) {
                     $values = $this->getObjectKey($data[$prop]);
                     if (!$values) {
+                        if ($required) {
+                            throw new OrmException(OrmException::EMPTY_VALUE, [$prop, $orm['cn']]);
+                        }
                         return;
                     }
                 } elseif ($fld['is_ref'] && is_string($data[$prop])) {
@@ -1040,14 +1049,19 @@ class Mapper
                 }
                 for ($j = 0; $j < $n; $j++) {
                     if (!array_key_exists($j, $values) && $n > 1) {
-                        throw new OrmException(OrmException::NO_DATA_FOR_REF_FIELD, [$fields[$j]]);
+                        throw new OrmException(OrmException::NO_DATA_FOR_REF_FIELD, [$fields[$j], $orm['cn']]);
                     }
                     if (!array_key_exists($fields[$j], $fldValues)) {
                         $fldValues[$fields[$j]] = $values[$j];
+                        if (!$values[$j] && $required) {
+                            throw new OrmException(OrmException::EMPTY_VALUE, [$prop, $orm['cn']]);
+                        }
                         $cb($fields[$j], $values[$j]);
                     }
                 }
-            }
+            } else if ($forInsertion && $required) {
+                throw new OrmException(OrmException::EMPTY_VALUE, [$prop, $orm['cn']]);
+            } 
         };
         
         if (isset($orm['parent'])) {
@@ -1098,7 +1112,9 @@ class Mapper
                 $params[$i] = $value;
                 $record[$fld] = $value;
                 $i++;
-            }
+            },
+            [],
+            true
         );
     
         $fields = implode(', ', $fields);
@@ -1278,7 +1294,7 @@ class Mapper
         return $result;
     }
   
-    private function idToKeyData($class, $id, $mask = false)
+    private function idToKeyData($class, $id, $mask = null)
     {
         $id = is_array($id) ? $id : $this->splitKey($id);
         $orm = $this->getOrmParams($class);
@@ -1518,16 +1534,16 @@ class Mapper
         if (is_object($data)) {
             $data = get_object_vars($data);
         }
-        if (isset($orm['discriminator'])) {
-            $data[$orm['discriminator']] = $cn;
-        }
     
         $this->begin();
         try {
             $key = $this->insert($orm, $data);
             $this->commit();
             return $this->getById($cn, $key, $options);
-        } catch (\Exception $e) {
+        } catch (OrmException $e) {
+            $this->rollback();
+            throw $e;
+        } catch (Exception $e) {
             $this->rollback();
             throw new OrmException(OrmException::CREATE_FAILED, [$cn], $e);
         }
@@ -1565,7 +1581,10 @@ class Mapper
             }
             $id2 = implode($this->multiFieldIdSeparator, $this->dataToKey((object)$idData, $cn));
             return $this->getById($cn, $id2, $options);
-        } catch (\Exception $e) {
+        } catch (OrmException $e) {
+            $this->rollback();
+            throw $e;
+        } catch (Exception $e) {
             $this->rollback();
             throw new OrmException(OrmException::UPDATE_FAILED, [$cn], $e);
         }
@@ -1592,7 +1611,10 @@ class Mapper
             }
             $this->commit();
             return $this->getById($cn, $id, $options);
-        } catch (\Exception $e) {
+        } catch (OrmException $e) {
+            $this->rollback();
+            throw $e;
+        } catch (Exception $e) {
             $this->rollback();
             throw new OrmException(OrmException::SAVE_FAILED, [$cn], $e);
         }
@@ -1623,7 +1645,10 @@ class Mapper
         try {
             $affected = $this->del($orm, $id, true);
             $this->commit();
-        } catch (\Exception $e) {
+        } catch (OrmException $e) {
+            $this->rollback();
+            throw $e;
+        } catch (Exception $e) {
             $this->rollback();
             throw new OrmException(OrmException::DELETE_FAILED, [$cn], $e);
         }
