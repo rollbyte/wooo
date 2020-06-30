@@ -5,6 +5,7 @@ namespace wooo\core;
 use wooo\core\exceptions\ComponentNotFoundException;
 use wooo\core\exceptions\ScopeException;
 use Psr\Container\ContainerInterface;
+use ReflectionException;
 
 class Scope implements ContainerInterface
 {
@@ -305,6 +306,12 @@ class Scope implements ContainerInterface
             return $component;
         } elseif (isset($this->aliases[$name])) {
             return $this->evaluate($this->aliases[$name]);
+        } else {
+            try {
+                return $this->instantiate($name);
+            } catch (ReflectionException $e) {
+                return null;
+            }
         }
         return null;
     }
