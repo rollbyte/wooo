@@ -2,6 +2,8 @@
 
 namespace wooo\lib\dbal;
 
+use PDO;
+use PDOStatement;
 use wooo\lib\dbal\interfaces as wooo;
 use wooo\lib\dbal\interfaces\DbDriver;
 use wooo\lib\dbal\interfaces\DbCursor;
@@ -12,7 +14,7 @@ class PDODriver implements wooo\DbDriver
   
     /**
      *
-     * @var \PDO
+     * @var PDO
      */
     private $connection;
   
@@ -38,7 +40,7 @@ class PDODriver implements wooo\DbDriver
     
     private $transaction_level = 0;
     
-    private $connectionOptions = [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION];
+    private $connectionOptions = [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION];
     
     private $dateTimeFormat = 'Y-m-d H:i:s';
     
@@ -46,7 +48,7 @@ class PDODriver implements wooo\DbDriver
   
     public function __construct($uri, string $user = null, string $pwd = null)
     {
-        if ($uri instanceof \PDO) {
+        if ($uri instanceof PDO) {
             $this->connection = $uri;
         } else {
             $this->uri = $uri;
@@ -79,7 +81,7 @@ class PDODriver implements wooo\DbDriver
     private function connect()
     {
         if (!$this->connection) {
-            $this->connection = new \PDO(
+            $this->connection = new PDO(
                 $this->uri,
                 $this->user,
                 $this->pwd,
@@ -91,13 +93,14 @@ class PDODriver implements wooo\DbDriver
     private function valType($v)
     {
         if (is_int($v)) {
-            return \PDO::PARAM_INT;
+            return PDO::PARAM_INT;
         }
         
         if (is_bool($v)) {
-            return \PDO::PARAM_BOOL;
+            return PDO::PARAM_BOOL;
         }
-        return \PDO::PARAM_STR;
+
+        return PDO::PARAM_STR;
     }
   
     /**
@@ -105,9 +108,9 @@ class PDODriver implements wooo\DbDriver
      * @param  string $q
      * @param  array  $params
      * @param  array  $output
-     * @return \PDOStatement
+     * @return PDOStatement
      */
-    private function statement($q, $params, &$output = null)
+    private function statement(string $q, array $params, &$output = null): PDOStatement
     {
         $this->connect();
         if (
@@ -134,7 +137,7 @@ class PDODriver implements wooo\DbDriver
         }
         if (is_array($output)) {
             foreach ($output as $nm => $value) {
-                $this->prepared[$q]->bindParam($nm, $value, \PDO::PARAM_INPUT_OUTPUT);
+                $this->prepared[$q]->bindParam($nm, $value, PDO::PARAM_INPUT_OUTPUT);
             }
         }
         return $this->prepared[$q];
@@ -217,7 +220,7 @@ class PDODriver implements wooo\DbDriver
         $stmt = $this->statement($q, $params);
         try {
             $stmt->execute();
-            $result = $stmt->fetchAll(\PDO::FETCH_OBJ);
+            $result = $stmt->fetchAll(PDO::FETCH_OBJ);
             $stmt->closeCursor();
             array_walk($result, function (&$obj) use ($types) {
                 $this->processResult($obj, $types);

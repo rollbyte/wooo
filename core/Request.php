@@ -114,7 +114,7 @@ class Request
         $this->files = new RequestData();
         $this->pathParams = new RequestData();
     
-        if (strtolower($this->getHeader('Content-Type')) == 'application/json') {
+        if (stripos($this->getHeader('Content-Type'), 'application/json') >= 0) {
             $this->body = new RequestData(json_decode($this->getRawPostData()));
         } else {
             $this->body = new RequestData($_POST);
