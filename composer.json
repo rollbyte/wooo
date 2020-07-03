@@ -8,6 +8,7 @@
 	},
 	"require" : {
 		"php": "^7.3",
+		"ext-intl": "*",
 		"psr/container" : "~1.0"
 	},
 	"autoload" : {
