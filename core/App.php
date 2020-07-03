@@ -100,6 +100,7 @@ class App implements IEventEmitter
             }
         } elseif ($arg instanceof Config) {
             $this->config->merge($arg);
+            $configSet = true;
         } elseif ($arg instanceof Scope) {
             $this->scope->inject($arg);
         } elseif ($arg instanceof Request) {
@@ -108,6 +109,7 @@ class App implements IEventEmitter
             $this->res = $arg;
         } elseif ($arg instanceof App) {
             $this->config->merge($arg->config());
+            $configSet = true;
             $this->scope->inherit($arg->scope());
             if (!$this->req) {
                 $this->req = $arg->request()->forContext($this);
