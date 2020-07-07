@@ -13,7 +13,7 @@ class ClickJack
       if ($setting && !in_array(strtoupper($setting), ['DENY', 'SAMEORIGIN'])) {
         throw new Exception('Invalid value specified for X-Frame-Options header');
       }
-      $resp->setHeader('X-Frame-Options', $setting ? strtoupper($setting) : 'DENY');
+      $resp->setHeader('X-Frame-Options: ' . ($setting ? strtoupper($setting) : 'DENY'));
     };
   }
 }
