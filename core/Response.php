@@ -175,9 +175,17 @@ class Response implements IEventEmitter
         return $this;
     }
   
-    public function setHeader($header): Response
+    public function setHeader($header, $value = null): Response
     {
-        header($header);
+        if ($value) {
+            header("$header: $value");
+        } else if (is_array($header)) {
+            foreach ($header as $h => $v) {
+                header("$h: $v");
+            }
+        } else {
+            header($header);
+        }
         return $this;
     }
     
